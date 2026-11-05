@@ -1,0 +1,70 @@
+# TAIO RemakeStudio: Danh mục giọng đọc vùng miền và quốc tế
+# Engines: vieneu, edge_tts, fpt_ai, omnivoice
+
+voices:
+  # Giọng Việt Bắc
+  vi_north_female_1:
+    id: "vi_north_female_1"
+    name: "Hoài My (Bắc - Nữ thanh lịch)"
+    region: "Bắc"
+    gender: "female"
+    engine: "edge_tts"
+    voice_key: "vi-VN-HoaiMyNeural"
+    tags: ["tin_tuc", "ke_chuyen", "tu_nhien"]
+
+  vi_north_male_1:
+    id: "vi_north_male_1"
+    name: "Nam Minh (Bắc - Nam trầm ấm)"
+    region: "Bắc"
+    gender: "male"
+    engine: "edge_tts"
+    voice_key: "vi-VN-NamMinhNeural"
+    tags: ["thuyet_minh", "khoa_hoc", "review"]
+
+  # Giọng Việt Nam
+  vi_south_female_1:
+    id: "vi_south_female_1"
+    name: "Mỹ Linh (Nam - Nữ ngọt ngào)"
+    region: "Nam"
+    gender: "female"
+    engine: "vieneu"
+    voice_key: "vieneu_south_female_01"
+    tags: ["tiktok", "tinh_cam", "gan_gui"]
+
+  vi_south_male_1:
+    id: "vi_south_male_1"
+    name: "Quốc Tuấn (Nam - Nam năng động)"
+    region: "Nam"
+    gender: "male"
+    engine: "vieneu"
+    voice_key: "vieneu_south_male_01"
+    tags: ["vlog", "cong_nghe", "hai_huoc"]
+
+  # Giọng Việt Trung (Miền Trung)
+  vi_central_female_1:
+    id: "vi_central_female_1"
+    name: "Hương Giang (Trung - Huế dịu dàng)"
+    region: "Trung"
+    gender: "female"
+    engine: "vieneu"
+    voice_key: "vieneu_central_female_01"
+    tags: ["que_huong", "tho", "truyen_thong"]
+
+  # Giọng Quốc tế (OmniVoice - Super Admin)
+  en_us_female:
+    id: "en_us_female"
+    name: "Jenny (US English)"
+    region: "US"
+    gender: "female"
+    engine: "omnivoice"
+    voice_key: "en-US-JennyNeural"
+    tags: ["international"]
+
+  zh_cn_female:
+    id: "zh_cn_female"
+    name: "Xiaoxiao (Mandarin)"
+    region: "CN"
+    gender: "female"
+    engine: "omnivoice"
+    voice_key: "zh-CN-XiaoxiaoNeural"
+    tags: ["international"]

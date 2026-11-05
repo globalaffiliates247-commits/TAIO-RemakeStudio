@@ -1,0 +1,37 @@
+# TAIO RemakeStudio: Phân quyền theo vai trò
+# Roles: super_admin, level_1, level_2
+
+roles:
+  super_admin:
+    name: "Super Admin"
+    description: "Quản trị viên TAIO, toàn quyền sử dụng tất cả luồng và mức đầu ra"
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    song_mode: true
+    storage_limit_files: -1  # Không giới hạn
+    storage_days: -1         # Không giới hạn
+    daily_quota_minutes: -1  # Không giới hạn
+    can_share_community: true
+
+  level_1:
+    name: "Người dùng Cấp 1"
+    description: "Bất kỳ ai, không rành công nghệ, dùng bản dịch nhanh"
+    allowed_flows: ["L1", "L4"]  # L2, L5 mở khi nâng cấp hoặc đổi điểm
+    allowed_levels: [1, 2]       # MVP: Mức 1 & 2
+    song_mode: false
+    storage_limit_files: 20
+    storage_days: 7
+    daily_quota_minutes: 30
+    voice_clones_per_day: 3
+    can_share_community: false
+
+  level_2:
+    name: "Người dùng Cấp 2"
+    description: "Tự chạy trên máy cá nhân hoặc máy chủ riêng với API key tự cấp"
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    song_mode: true
+    storage_limit_files: -1
+    storage_days: -1
+    daily_quota_minutes: -1
+    can_share_community: false

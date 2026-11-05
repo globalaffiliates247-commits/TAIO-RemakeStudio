@@ -1,0 +1,88 @@
+# TAIO RemakeStudio: Flows Configuration
+# Định nghĩa công cụ chép lời, dịch thuật, giọng đọc cho từng luồng
+
+flows:
+  L1:
+    id: L1
+    name: "Tiếng Anh → Tiếng Việt"
+    description: "Chuyển video/audio tiếng Anh sang tiếng Việt đa định dạng"
+    source_lang: "en"
+    target_lang: "vi"
+    transcribe:
+      primary: "groq_turbo"
+      fallback: "groq_large_v3"
+      local: "faster_whisper_local"
+    translate:
+      primary: "gemini"
+      fallback: "deepseek"
+    tts:
+      default_voice: "vi_north_female_1"
+      supported_levels: [1, 2, 3, 4]
+
+  L2:
+    id: L2
+    name: "Ngoại ngữ khác → Tiếng Việt"
+    description: "Dịch từ tiếng Trung, Nhật, Hàn, Thái, Pháp, Tây Ban Nha... sang tiếng Việt"
+    source_lang: "auto"
+    target_lang: "vi"
+    transcribe:
+      primary: "groq_turbo"
+      fallback: "groq_large_v3"
+      local: "faster_whisper_local"
+    translate:
+      primary: "gemini"
+      fallback: "deepseek"
+    tts:
+      default_voice: "vi_north_female_1"
+      supported_levels: [1, 2, 3, 4]
+
+  L3:
+    id: L3
+    name: "Tiếng Việt → Nhiều ngôn ngữ"
+    description: "Xuất khẩu nội dung tiếng Việt ra thế giới (Anh, Trung, Nhật, Hàn...)"
+    source_lang: "vi"
+    target_lang: "multi"
+    transcribe:
+      primary: "phowhisper"
+      fallback: "groq_large_v3"
+      local: "phowhisper_local"
+    translate:
+      primary: "gemini"
+      fallback: "deepseek"
+    tts:
+      engine: "omnivoice"
+      supported_levels: [1, 2, 3, 4]
+
+  L4:
+    id: L4
+    name: "Đổi giọng: Tiếng Việt → Tiếng Việt"
+    description: "Giữ nguyên lời, không dịch, thay đổi giọng đọc vùng miền hoặc giọng nhân bản"
+    source_lang: "vi"
+    target_lang: "vi"
+    transcribe:
+      primary: "phowhisper"
+      fallback: "groq_large_v3"
+      local: "phowhisper_local"
+    translate:
+      primary: null  # Không dịch
+    tts:
+      engine: "vieneu"
+      supported_levels: [1, 2, 3, 4]
+    options:
+      keep_background_music: true
+      bgm_separator: "demucs"
+
+  L5:
+    id: L5
+    name: "Tách nhạc (Music Stems)"
+    description: "Tách bài hát thành 4 track riêng: Giọng hát, Trống, Bass, Nhạc cụ khác"
+    source_lang: null
+    target_lang: null
+    separator: "demucs"
+    outputs:
+      - "vocals"
+      - "drums"
+      - "bass"
+      - "other"
+      - "no_drums"     # Nhạc đệm bỏ trống
+      - "karaoke"      # Bỏ giọng hát

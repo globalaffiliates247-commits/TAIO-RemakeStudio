@@ -1,0 +1,39 @@
+# TAIO Tools Backup Registry
+# Danh sách sao lưu git mirror và models theo nguyên tắc TAIO-Lee 05/11/2026
+# Thêm công cụ mới = thêm 1 dòng
+
+tools:
+  - name: "yt-dlp"
+    repo: "https://github.com/yt-dlp/yt-dlp.git"
+    license: "Unlicense"
+    purpose: "Trích xuất video/audio từ TikTok, Facebook, YouTube"
+
+  - name: "demucs"
+    repo: "https://github.com/facebookresearch/demucs.git"
+    license: "MIT"
+    purpose: "Tách giọng nói khỏi nhạc nền và tách nhạc stems"
+
+  - name: "faster-whisper"
+    repo: "https://github.com/SYSTRAN/faster-whisper.git"
+    license: "MIT"
+    purpose: "Chép lời đa ngôn ngữ siêu tốc trên CPU/GPU"
+
+  - name: "phowhisper"
+    repo: "https://huggingface.co/vinai/phowhisper-medium"
+    license: "Apache-2.0"
+    purpose: "Chép lời tiếng Việt chính xác đa vùng miền"
+
+  - name: "vieneu-tts"
+    repo: "https://github.com/vieneu/vieneu-tts.git"
+    license: "Apache-2.0"
+    purpose: "Giọng đọc tiếng Việt Bắc/Trung/Nam và nhân bản giọng"
+
+  - name: "omnivoice"
+    repo: "https://github.com/k2-fsa/omnivoice.git"
+    license: "Apache-2.0"
+    purpose: "600+ ngôn ngữ quốc tế cho Super Admin"
+
+  - name: "pypinyin"
+    repo: "https://github.com/mozillazg/python-pinyin.git"
+    license: "MIT"
+    purpose: "Phiên âm pinyin cho học tiếng Trung qua bài hát"

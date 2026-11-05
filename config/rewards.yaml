@@ -1,0 +1,27 @@
+# TAIO RemakeStudio: Nhiệm vụ và Điểm thưởng cộng đồng
+# Người dùng đổi điểm lấy thêm phút dịch hoặc mở luồng L2
+
+tasks:
+  daily_checkin:
+    id: "daily_checkin"
+    name: "Điểm danh hàng ngày"
+    reward_minutes: 5
+    max_per_day: 1
+
+  join_telegram_community:
+    id: "join_telegram_community"
+    name: "Tham gia nhóm hỗ trợ Telegram"
+    reward_minutes: 30
+    one_time: true
+
+  share_translated_video:
+    id: "share_translated_video"
+    name: "Chia sẻ 1 video đã dịch lên mạng xã hội kèm hashtag #TAIO"
+    reward_minutes: 20
+    max_per_week: 3
+
+  report_bug_or_feedback:
+    id: "report_bug_or_feedback"
+    name: "Góp ý chất lượng bản dịch hoặc báo lỗi"
+    reward_minutes: 15
+    max_per_month: 4

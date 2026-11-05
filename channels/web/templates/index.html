@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAIO RemakeStudio | Đọc Lại & Dịch Lại Video Đa Ngôn Ngữ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #090d16;
+            color: #f1f5f9;
+        }
+        .glass-panel {
+            background: rgba(18, 24, 38, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35);
+            transition: all 0.3s ease;
+        }
+        .glow-btn:hover {
+            box-shadow: 0 6px 25px rgba(139, 92, 246, 0.5);
+            transform: translateY(-2px);
+        }
+        .tab-active {
+            background: #2563eb;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-headphones-simple text-white text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">
+                        TAIO <span class="text-white font-medium text-base">RemakeStudio</span>
+                    </span>
+                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700/50">v0.2 MVP</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs">
+                    <i class="fa-regular fa-clock text-blue-400"></i>
+                    <span class="text-slate-400">Hạn mức còn lại:</span>
+                    <span id="quota-display" class="font-bold text-emerald-400">60.0 phút</span>
+                </div>
+                <button class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                    <i class="fa-solid fa-shield-halved mr-1 text-indigo-400"></i> Vai trò: Cấp 1
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+        
+        <!-- Hero Title -->
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                Nghe lại video nước ngoài bằng <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">tiếng Việt</span>
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+                Dán link TikTok, Facebook Reels hoặc tải file lên. Nhận ngay bản dịch chữ, giọng đọc quê hương, video lồng tiếng hoặc bản tóm tắt cho NotebookLM.
+            </p>
+        </div>
+
+        <!-- Studio Form Container -->
+        <div class="glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+            
+            <!-- Input Source Tabs -->
+            <div class="flex space-x-2 p-1 bg-slate-900/80 rounded-xl border border-slate-800 max-w-md mx-auto">
+                <button type="button" id="tab-link-btn" onclick="switchInputTab('link')" class="flex-1 py-2 px-4 rounded-lg text-xs sm:text-sm font-semibold transition tab-active flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-link"></i>
+                    <span>Dán Link Video</span>
+                </button>
+                <button type="button" id="tab-file-btn" onclick="switchInputTab('file')" class="flex-1 py-2 px-4 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Tải File Lên</span>
+                </button>
+            </div>
+
+            <!-- Input Controls -->
+            <div id="input-link-section" class="space-y-2">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Đường dẫn Video (TikTok / Facebook Reel / YouTube)</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <i class="fa-brands fa-tiktok text-sm"></i>
+                    </div>
+                    <input type="url" id="video-url-input" placeholder="https://www.tiktok.com/@user/video/... hoặc https://fb.watch/..." 
+                        class="w-full pl-10 pr-4 py-3 bg-slate-900/90 rounded-xl border border-slate-700/80 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm text-white placeholder-slate-500 outline-none transition">
+                </div>
+            </div>
+
+            <div id="input-file-section" class="space-y-2 hidden">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Tải lên video hoặc âm thanh từ thiết bị</label>
+                <div class="border-2 border-dashed border-slate-700 hover:border-blue-500/60 rounded-xl p-6 text-center cursor-pointer transition bg-slate-900/40" onclick="document.getElementById('file-upload-input').click()">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-400 mb-2"></i>
+                    <p class="text-sm font-medium text-slate-300" id="file-chosen-text">Kéo thả file vào đây hoặc nhấp để chọn file</p>
+                    <p class="text-xs text-slate-500 mt-1">Hỗ trợ MP4, MOV, MP3, WAV, M4A (Tối đa 100MB)</p>
+                    <input type="file" id="file-upload-input" class="hidden" accept="video/*,audio/*" onchange="onFileSelected(this)">
+                </div>
+            </div>
+
+            <!-- Flow & Options Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2 border-t border-slate-800">
+                
+                <!-- 1. Chọn Luồng Dịch -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>1. Luồng Xử Lý</span>
+                        <i class="fa-solid fa-arrows-split-up-and-left text-slate-500"></i>
+                    </label>
+                    <select id="flow-select" class="w-full py-2.5 px-3 bg-slate-900 rounded-xl border border-slate-700 text-xs sm:text-sm text-white focus:border-blue-500 outline-none">
+                        <option value="L1" selected>L1: Tiếng Anh ➔ Tiếng Việt</option>
+                        <option value="L2">L2: Ngoại ngữ khác (Trung, Nhật, Hàn) ➔ Tiếng Việt</option>
+                        <option value="L3">L3: Tiếng Việt ➔ Quốc Tế (Super Admin)</option>
+                        <option value="L4">L4: Đổi giọng (Tiếng Việt ➔ Tiếng Việt)</option>
+                        <option value="L5">L5: Tách nhạc Stems (Giọng, Trống, Bass, Karaoke)</option>
+                    </select>
+                </div>
+
+                <!-- 2. Mức Đầu Ra -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>2. Mức Đầu Ra</span>
+                        <span class="text-blue-400 text-xs font-normal">Tích luỹ liên tiếp</span>
+                    </label>
+                    <select id="level-select" class="w-full py-2.5 px-3 bg-slate-900 rounded-xl border border-slate-700 text-xs sm:text-sm text-white focus:border-blue-500 outline-none">
+                        <option value="1">Mức 1: Chữ (TXT, SRT phụ đề, DOCX)</option>
+                        <option value="2" selected>Mức 2: Giọng đọc vùng miền (MP3)</option>
+                        <option value="3">Mức 3: Video lồng tiếng khớp hình (MP4)</option>
+                        <option value="4">Mức 4: Tóm tắt chủ đề (Cornell & NotebookLM)</option>
+                    </select>
+                </div>
+
+                <!-- 3. Giọng Đọc Vùng Miền -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>3. Giọng Đọc Vùng Miền</span>
+                        <i class="fa-solid fa-microphone-lines text-slate-500"></i>
+                    </label>
+                    <select id="voice-select" class="w-full py-2.5 px-3 bg-slate-900 rounded-xl border border-slate-700 text-xs sm:text-sm text-white focus:border-blue-500 outline-none">
+                        <option value="vi_north_female_1" selected>Miền Bắc: Hoài My (Nữ thanh lịch)</option>
+                        <option value="vi_north_male_1">Miền Bắc: Nam Minh (Nam trầm ấm)</option>
+                        <option value="vi_south_female_1">Miền Nam: Mỹ Linh (Nữ ngọt ngào)</option>
+                        <option value="vi_south_male_1">Miền Nam: Quốc Tuấn (Nam năng động)</option>
+                        <option value="vi_central_female_1">Miền Trung: Hương Giang (Huế dịu dàng)</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Song Mode Toggle -->
+            <div class="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                        <i class="fa-solid fa-music text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs sm:text-sm font-semibold text-white">Chế độ Bài Hát (Song Mode)</div>
+                        <div class="text-xs text-slate-400">Tách giọng hát trước khi chép lời, kèm phiên âm Pinyin/Romaji 3 dòng học bài hát</div>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="song-mode-toggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <!-- Action Button -->
+            <div>
+                <button type="button" id="start-btn" onclick="submitTask()" class="w-full py-3.5 px-6 rounded-xl font-bold text-white text-sm sm:text-base glow-btn flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Bắt Đầu Remake</span>
+                </button>
+            </div>
+
+            <!-- Progress & Status Box -->
+            <div id="progress-container" class="hidden space-y-3 pt-4 border-t border-slate-800">
+                <div class="flex items-center justify-between text-xs sm:text-sm">
+                    <span id="progress-step-text" class="text-slate-300 font-medium flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-notch fa-spin text-blue-400"></i>
+                        <span>Đang khởi tạo tiến trình...</span>
+                    </span>
+                    <span id="progress-percent" class="font-bold text-blue-400">0%</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Output Results Container -->
+        <div id="results-container" class="hidden glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <i class="fa-solid fa-circle-check text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white" id="res-title">Kết Quả Xử Lý</h2>
+                        <p class="text-xs text-slate-400" id="res-meta">Thời lượng: 0s | Luồng: L1</p>
+                    </div>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">Sẵn sàng tải về</span>
+            </div>
+
+            <!-- Media Preview (Audio / Video) -->
+            <div id="preview-section" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Audio Player -->
+                <div id="audio-preview-box" class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2 hidden">
+                    <div class="text-xs font-semibold text-slate-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-volume-high text-blue-400"></i>
+                        <span>Bản Đọc Tiếng Việt (Mức 2)</span>
+                    </div>
+                    <audio id="audio-player" controls class="w-full h-10"></audio>
+                </div>
+
+                <!-- Video Player -->
+                <div id="video-preview-box" class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2 hidden">
+                    <div class="text-xs font-semibold text-slate-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-film text-indigo-400"></i>
+                        <span>Video Lồng Tiếng Khớp Hình (Mức 3)</span>
+                    </div>
+                    <video id="video-player" controls class="w-full max-h-56 rounded-lg bg-black"></video>
+                </div>
+            </div>
+
+            <!-- Download Buttons -->
+            <div class="space-y-2">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Tải về các tệp sản phẩm:</div>
+                <div id="download-buttons-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Dual Subtitle / Transcript Preview -->
+            <div class="space-y-2">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Xem Trước Bản Dịch Song Ngữ (Mức 1)</span>
+                    <i class="fa-solid fa-language text-slate-500"></i>
+                </div>
+                <div id="transcript-preview-box" class="max-h-60 overflow-y-auto p-4 bg-slate-950/70 rounded-xl border border-slate-800 text-xs space-y-3 font-mono">
+                    <!-- Dynamic segments -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-panel border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 space-y-1">
+            <p>TAIO RemakeStudio &copy; 2026 TAIO.Club · Sứ mệnh: "Không cần giỏi ngoại ngữ. Nghe lại bằng tiếng Việt."</p>
+            <p class="text-[11px] text-slate-600">Được tối ưu hoá cho Render Cloud Platform · Dùng chung hạ tầng với TAIO Studio & TAIO Agent Hub</p>
+        </div>
+    </footer>
+
+    <!-- Client-side Logic -->
+    <script>
+        let currentTab = 'link';
+        let pollInterval = null;
+
+        function switchInputTab(tab) {
+            currentTab = tab;
+            const linkBtn = document.getElementById('tab-link-btn');
+            const fileBtn = document.getElementById('tab-file-btn');
+            const linkSec = document.getElementById('input-link-section');
+            const fileSec = document.getElementById('input-file-section');
+
+            if (tab === 'link') {
+                linkBtn.classList.add('tab-active');
+                linkBtn.classList.remove('text-slate-400');
+                fileBtn.classList.remove('tab-active');
+                fileBtn.classList.add('text-slate-400');
+                linkSec.classList.remove('hidden');
+                fileSec.classList.add('hidden');
+            } else {
+                fileBtn.classList.add('tab-active');
+                fileBtn.classList.remove('text-slate-400');
+                linkBtn.classList.remove('tab-active');
+                linkBtn.classList.add('text-slate-400');
+                fileSec.classList.remove('hidden');
+                linkSec.classList.add('hidden');
+            }
+        }
+
+        function onFileSelected(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('file-chosen-text').innerText = input.files[0].name + " (" + (input.files[0].size / (1024*1024)).toFixed(1) + " MB)";
+            }
+        }
+
+        async function submitTask() {
+            const videoUrl = document.getElementById('video-url-input').value.trim();
+            const fileInput = document.getElementById('file-upload-input');
+            const flowId = document.getElementById('flow-select').value;
+            const level = document.getElementById('level-select').value;
+            const voiceId = document.getElementById('voice-select').value;
+            const songMode = document.getElementById('song-mode-toggle').checked;
+
+            if (currentTab === 'link' && !videoUrl) {
+                alert('Vui lòng nhập link video TikTok hoặc Facebook Reels!');
+                return;
+            }
+            if (currentTab === 'file' && (!fileInput.files || !fileInput.files[0])) {
+                alert('Vui lòng chọn 1 tệp video hoặc âm thanh từ thiết bị!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('flow_id', flowId);
+            formData.append('target_level', level);
+            formData.append('voice_id', voiceId);
+            formData.append('song_mode', songMode);
+            formData.append('user_id', 'guest_user');
+
+            if (currentTab === 'link') {
+                formData.append('video_url', videoUrl);
+            } else {
+                formData.append('file', fileInput.files[0]);
+            }
+
+            // Hiển thị thanh tiến trình
+            const pCont = document.getElementById('progress-container');
+            const pBar = document.getElementById('progress-bar');
+            const pText = document.getElementById('progress-step-text');
+            const pPerc = document.getElementById('progress-percent');
+            const startBtn = document.getElementById('start-btn');
+            const resCont = document.getElementById('results-container');
+
+            pCont.classList.remove('hidden');
+            resCont.classList.add('hidden');
+            startBtn.disabled = true;
+            startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const resp = await fetch('/api/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.task_id) {
+                    startPolling(data.task_id);
+                } else {
+                    alert('Lỗi tạo nhiệm vụ: ' + (data.detail || 'Không rõ nguyên nhân'));
+                    resetBtn();
+                }
+            } catch (err) {
+                alert('Lỗi kết nối máy chủ: ' + err);
+                resetBtn();
+            }
+        }
+
+        function startPolling(taskId) {
+            const pBar = document.getElementById('progress-bar');
+            const pText = document.getElementById('progress-step-text');
+            const pPerc = document.getElementById('progress-percent');
+
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/task/' + taskId);
+                    const task = await res.json();
+
+                    pBar.style.width = task.progress + '%';
+                    pPerc.innerText = task.progress + '%';
+                    pText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-blue-400"></i> <span>' + task.step + '</span>';
+
+                    if (task.status === 'completed') {
+                        clearInterval(pollInterval);
+                        displayResults(task);
+                        resetBtn();
+                    } else if (task.status === 'failed') {
+                        clearInterval(pollInterval);
+                        alert('Xử lý thất bại: ' + task.error);
+                        resetBtn();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 1000);
+        }
+
+        function resetBtn() {
+            const startBtn = document.getElementById('start-btn');
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function displayResults(task) {
+            const resCont = document.getElementById('results-container');
+            resCont.classList.remove('hidden');
+            document.getElementById('res-title').innerText = task.result.title || "Tác phẩm hoàn thành";
+            document.getElementById('res-meta').innerText = `Thời lượng: ${task.result.duration ? task.result.duration.toFixed(1) : 0}s | Luồng: ${task.flow}`;
+
+            // Populate Downloads
+            const btnGrid = document.getElementById('download-buttons-grid');
+            btnGrid.innerHTML = '';
+
+            const icons = {
+                'srt': { icon: 'fa-closed-captioning', label: 'Phụ đề SRT', color: 'bg-emerald-600' },
+                'txt': { icon: 'fa-file-lines', label: 'Văn bản TXT', color: 'bg-slate-700' },
+                'docx': { icon: 'fa-file-word', label: 'Tài liệu Word', color: 'bg-blue-600' },
+                'audio': { icon: 'fa-file-audio', label: 'Audio MP3', color: 'bg-purple-600' },
+                'video': { icon: 'fa-file-video', label: 'Video MP4', color: 'bg-rose-600' },
+                'summary_md': { icon: 'fa-brain', label: 'NotebookLM (MD)', color: 'bg-amber-600' },
+                'karaoke': { icon: 'fa-microphone-lines', label: 'Karaoke Beat', color: 'bg-pink-600' },
+                'no_drums': { icon: 'fa-drum', label: 'Nhạc đệm bỏ trống', color: 'bg-cyan-600' }
+            };
+
+            for (const [key, url] of Object.entries(task.download_urls || {})) {
+                const conf = icons[key] || { icon: 'fa-download', label: key.toUpperCase(), color: 'bg-slate-700' };
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '';
+                a.className = `${conf.color} hover:opacity-90 py-2.5 px-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-white transition`;
+                a.innerHTML = `<i class="fa-solid ${conf.icon}"></i> <span>${conf.label}</span>`;
+                btnGrid.appendChild(a);
+            }
+
+            // Preview Players
+            const audioBox = document.getElementById('audio-preview-box');
+            const videoBox = document.getElementById('video-preview-box');
+            if (task.download_urls && task.download_urls.audio) {
+                audioBox.classList.remove('hidden');
+                document.getElementById('audio-player').src = task.download_urls.audio;
+            } else {
+                audioBox.classList.add('hidden');
+            }
+
+            if (task.download_urls && task.download_urls.video) {
+                videoBox.classList.remove('hidden');
+                document.getElementById('video-player').src = task.download_urls.video;
+            } else {
+                videoBox.classList.add('hidden');
+            }
+
+            // Transcript View
+            const transBox = document.getElementById('transcript-preview-box');
+            transBox.innerHTML = '';
+            const segments = (task.result.transcript && task.result.transcript.segments) || [];
+            if (segments.length === 0) {
+                transBox.innerHTML = '<span class="text-slate-500">Không có dòng thoại để hiển thị.</span>';
+            } else {
+                segments.forEach(seg => {
+                    const div = document.createElement('div');
+                    div.className = 'border-b border-slate-800/80 pb-2';
+                    div.innerHTML = `
+                        <div class="text-[10px] text-blue-400">[${seg.start.toFixed(1)}s - ${seg.end.toFixed(1)}s]</div>
+                        <div class="text-slate-400">Gốc: ${seg.original_text}</div>
+                        ${seg.pinyin ? `<div class="text-pink-400">Pinyin: ${seg.pinyin}</div>` : ''}
+                        <div class="text-emerald-300 font-semibold">Dịch: ${seg.translated_text || seg.original_text}</div>
+                    `;
+                    transBox.appendChild(div);
+                });
+            }
+
+            // Cuộn xuống kết quả
+            resCont.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

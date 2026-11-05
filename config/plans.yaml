@@ -1,0 +1,54 @@
+# TAIO RemakeStudio: Gói và Hạn mức
+# Tính theo phút audio thật, minh bạch, không dùng credit ảo
+
+plans:
+  free_tier:
+    name: "Gói Khởi Đầu (Miễn Phí)"
+    code: "FREE"
+    price_vnd: 0
+    included_minutes_monthly: 60
+    max_file_size_mb: 100
+    retention_days: 7
+    features:
+      - "Miễn phí luồng L1 (Anh → Việt)"
+      - "Mức 1: Xuất phụ đề SRT, văn bản TXT, DOCX"
+      - "Mức 2: Giọng đọc vùng miền Bắc / Nam"
+      - "Hỗ trợ link TikTok & Facebook Reels"
+
+  creator_tier:
+    name: "Gói Sáng Tạo (Creator)"
+    code: "CREATOR"
+    price_vnd: 99000
+    billing_period: "monthly"
+    included_minutes_monthly: 300
+    max_file_size_mb: 500
+    retention_days: 30
+    features:
+      - "Mở khoá đầy đủ luồng L1, L2, L4"
+      - "Mức 3: Xuất video lồng tiếng tự động (MP4)"
+      - "Mức 4: Tóm tắt chủ đề chuẩn NotebookLM"
+      - "Chế độ bài hát Song Mode (Pinyin + Vi)"
+
+  pro_studio:
+    name: "Gói Phòng Thu Pro (Studio)"
+    code: "PRO_STUDIO"
+    price_vnd: 249000
+    billing_period: "monthly"
+    included_minutes_monthly: 1000
+    max_file_size_mb: 2000
+    retention_days: 90
+    features:
+      - "Mở khoá toàn bộ luồng L1 - L5"
+      - "Tách nhạc Demucs 4 tracks (giọng, trống, bass, nhạc cụ)"
+      - "L3: Dịch ra đa ngôn ngữ quốc tế"
+      - "Ưu tiên hàng đợi xử lý tốc độ cao"
+
+minute_packs:
+  pack_50:
+    name: "Gói nạp thêm 50 phút"
+    minutes: 50
+    price_vnd: 29000
+  pack_200:
+    name: "Gói nạp thêm 200 phút"
+    minutes: 200
+    price_vnd: 89000

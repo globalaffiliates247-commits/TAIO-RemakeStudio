@@ -75,6 +75,13 @@ class VoiceSynthesizer:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def _concat_audio_files(self, file_list: list, output_path: str):
+        if not file_list:
+            return
+
+        if len(file_list) == 1:
+            shutil.copyfile(file_list[0], output_path)
+            return
+
         concat_txt = output_path + ".list.txt"
         with open(concat_txt, "w") as f:
             for fpath in file_list:
@@ -89,8 +96,14 @@ class VoiceSynthesizer:
             ]
             subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         except Exception as e:
-            logger.warning(f"ffmpeg concat audio thất bại ({e}). Sao chép file đơn lẻ.")
-            shutil.copyfile(file_list[0], output_path)
+            logger.warning(f"ffmpeg concat audio thất bại ({e}). Ghép trực tiếp MP3 frames.")
+            try:
+                with open(output_path, "wb") as outfile:
+                    for f in file_list:
+                        with open(f, "rb") as infile:
+                            outfile.write(infile.read())
+            except Exception:
+                shutil.copyfile(file_list[0], output_path)
         finally:
             if os.path.exists(concat_txt):
                 os.remove(concat_txt)

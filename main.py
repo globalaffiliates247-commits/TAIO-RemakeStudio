@@ -9,6 +9,11 @@ import threading
 import logging
 import uvicorn
 
+# Đảm bảo các binary trong .venv/bin (ffmpeg, yt-dlp) và brew luôn được ưu tiên
+project_root = os.path.dirname(os.path.abspath(__file__))
+venv_bin = os.path.join(project_root, ".venv", "bin")
+os.environ["PATH"] = f"{venv_bin}:/opt/homebrew/bin:/usr/local/bin:{os.environ.get('PATH', '')}"
+
 # Thiết lập logging
 logging.basicConfig(
     level=logging.INFO,

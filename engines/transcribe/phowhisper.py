@@ -1,12 +1,14 @@
 """
 VinAIResearch/PhoWhisper Engine
-Tối ưu hóa đặc biệt cho tiếng Việt đa vùng miền và tiếng lóng.
+Tối ưu hóa đặc biệt cho tiếng Việt đa vùng miền.
+Theo PRD Mục 3: Nếu PhoWhisper local không khả dụng, tự động dự phòng sang Groq Whisper Large v3.
 """
 
 import os
 import logging
 from typing import Optional
 from engines.models import Transcript, TranscriptSegment
+from engines.transcribe.groq_large_v3 import GroqLargeV3Transcriber
 
 logger = logging.getLogger("taio.transcribe.phowhisper")
 
@@ -14,6 +16,7 @@ logger = logging.getLogger("taio.transcribe.phowhisper")
 class PhoWhisperTranscriber:
     def __init__(self, model_name: str = "vinai/phowhisper-medium"):
         self.model_name = model_name
+        self.groq_fallback = GroqLargeV3Transcriber()
 
     def transcribe(self, audio_file_path: str, language: str = "vi") -> Transcript:
         logger.info(f"Đang chép lời bằng PhoWhisper ({self.model_name}): {audio_file_path}")
@@ -24,7 +27,6 @@ class PhoWhisperTranscriber:
         )
 
         try:
-            # Nếu transformers & torch có sẵn
             import torch
             from transformers import pipeline
 
@@ -51,18 +53,20 @@ class PhoWhisperTranscriber:
 
             return transcript
         except Exception as e:
-            logger.warning(f"PhoWhisper local chưa tải model hoặc thiếu CUDA: {e}. Fallback demo segments.")
-            # Fallback transcript
+            logger.info(f"PhoWhisper local không khả dụng ({e}). Chuyển sang Groq Whisper Large v3 theo quy ước PRD...")
+            # Fallback sang Groq Whisper Large v3 theo đúng bảng Luồng PRD Section 3
+            try:
+                res = self.groq_fallback.transcribe(audio_file_path, language="vi")
+                if res and res.segments:
+                    return res
+            except Exception as ge:
+                logger.warning(f"Groq fallback gặp lỗi: {ge}")
+
+            # Nếu chưa có API key và chưa có local model, tạo cảnh báo rõ ràng
             transcript.add_segment(TranscriptSegment(
                 id=1,
                 start=0.0,
-                end=4.0,
-                original_text="Chào mừng bạn đến với TAIO RemakeStudio."
-            ))
-            transcript.add_segment(TranscriptSegment(
-                id=2,
-                start=4.2,
-                end=8.5,
-                original_text="Công cụ dịch và lồng tiếng video đa vùng miền dành cho người Việt."
+                end=5.0,
+                original_text="[Chưa cấu hình GROQ_API_KEY trong file .env để chép lời tự động từ video này]"
             ))
             return transcript

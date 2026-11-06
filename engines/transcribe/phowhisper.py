@@ -1,13 +1,14 @@
 """
 VinAIResearch/PhoWhisper Engine
 Tối ưu hóa đặc biệt cho tiếng Việt đa vùng miền.
-Theo PRD Mục 3: Nếu PhoWhisper local không khả dụng, tự động dự phòng sang Groq Whisper Large v3.
 """
 
 import os
 import logging
 from typing import Optional
 from engines.models import Transcript, TranscriptSegment
+from engines.errors import EngineUnavailable, EngineFailed
+from engines.demo import is_demo_mode, get_demo_transcript
 from engines.transcribe.groq_large_v3 import GroqLargeV3Transcriber
 
 logger = logging.getLogger("taio.transcribe.phowhisper")
@@ -19,7 +20,6 @@ class PhoWhisperTranscriber:
         self.groq_fallback = GroqLargeV3Transcriber()
 
     def transcribe(self, audio_file_path: str, language: str = "vi") -> Transcript:
-        logger.info(f"Đang chép lời bằng PhoWhisper ({self.model_name}): {audio_file_path}")
         transcript = Transcript(
             title=os.path.basename(audio_file_path),
             media_path=audio_file_path,
@@ -53,20 +53,14 @@ class PhoWhisperTranscriber:
 
             return transcript
         except Exception as e:
-            logger.info(f"PhoWhisper local không khả dụng ({e}). Chuyển sang Groq Whisper Large v3 theo quy ước PRD...")
-            # Fallback sang Groq Whisper Large v3 theo đúng bảng Luồng PRD Section 3
+            logger.info(f"PhoWhisper local không khả dụng ({e}). Dự phòng sang Groq Whisper...")
             try:
-                res = self.groq_fallback.transcribe(audio_file_path, language="vi")
-                if res and res.segments:
-                    return res
+                return self.groq_fallback.transcribe(audio_file_path, language="vi")
             except Exception as ge:
-                logger.warning(f"Groq fallback gặp lỗi: {ge}")
-
-            # Nếu chưa có API key và chưa có local model, tạo cảnh báo rõ ràng
-            transcript.add_segment(TranscriptSegment(
-                id=1,
-                start=0.0,
-                end=5.0,
-                original_text="[Chưa cấu hình GROQ_API_KEY trong file .env để chép lời tự động từ video này]"
-            ))
-            return transcript
+                if is_demo_mode():
+                    return get_demo_transcript(lang="vi")
+                raise EngineUnavailable(
+                    "PhoWhisper / Groq Whisper",
+                    f"Cả PhoWhisper local và Groq đều không khả dụng: {ge}",
+                    setup_hint="Thêm GROQ_API_KEY vào .env để sử dụng chép lời."
+                )

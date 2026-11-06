@@ -1,6 +1,7 @@
 """
 Gemini Flash Translation Engine
 Sử dụng mô hình Gemini 1.5/2.0 Flash để dịch ngữ cảnh, giữ nhịp điệu và khớp mốc thời gian.
+Theo chuẩn v0.3: Không chứa dữ liệu giả ngầm.
 """
 
 import os
@@ -8,6 +9,8 @@ import json
 import logging
 from typing import Optional
 from engines.models import Transcript
+from engines.errors import EngineUnavailable, EngineFailed
+from engines.demo import is_demo_mode
 
 logger = logging.getLogger("taio.translate.gemini")
 
@@ -18,17 +21,22 @@ class GeminiTranslator:
         self.model = "gemini-1.5-flash"
 
     def translate_transcript(self, transcript: Transcript, target_lang: str = "vi") -> Transcript:
-        """
-        Dịch toàn bộ Transcript sang target_lang, cập nhật translated_text cho từng segment.
-        """
         if not transcript.segments:
             return transcript
 
         transcript.target_language = target_lang
 
-        if not self.api_key:
-            logger.warning("GEMINI_API_KEY chưa được cấu hình. Sử dụng bản dịch mẫu/tự động.")
-            return self._auto_translate_fallback(transcript, target_lang)
+        if not self.api_key or "your_gemini_api_key" in self.api_key or len(self.api_key.strip()) < 15:
+            if is_demo_mode():
+                logger.info("DEMO_MODE=1: Gán bản dịch demo.")
+                for s in transcript.segments:
+                    s.translated_text = f"[Demo Dịch] {s.original_text}"
+                return transcript
+            raise EngineUnavailable(
+                "Gemini Flash",
+                "Chưa cấu hình GEMINI_API_KEY",
+                setup_hint="Thêm GEMINI_API_KEY vào file .env rồi khởi động lại."
+            )
 
         try:
             import google.generativeai as genai
@@ -68,17 +76,5 @@ Dữ liệu đầu vào:
             return transcript
 
         except Exception as e:
-            logger.error(f"Lỗi khi gọi Gemini Translation API: {e}. Sử dụng fallback.")
-            return self._auto_translate_fallback(transcript, target_lang)
-
-    def _auto_translate_fallback(self, transcript: Transcript, target_lang: str) -> Transcript:
-        """Fallback dịch mẫu khi không có Gemini API key"""
-        translations = {
-            "Welcome to TAIO RemakeStudio, the all-in-one media localization tool.": "Chào mừng đến với TAIO RemakeStudio, công cụ bản địa hóa video toàn diện.",
-            "Now anyone can listen to global content in Vietnamese with natural regional voices.": "Giờ đây ai cũng có thể nghe nội dung quốc tế bằng tiếng Việt với giọng đọc quê hương thân thuộc.",
-            "From TikTok and Facebook videos to podcasts and favorite songs.": "Từ video TikTok, Facebook Reels đến các bài hát và podcast yêu thích."
-        }
-        for seg in transcript.segments:
-            if not seg.translated_text:
-                seg.translated_text = translations.get(seg.original_text, f"[Dịch Tiếng Việt] {seg.original_text}")
-        return transcript
+            logger.error(f"Lỗi khi gọi Gemini Translation API: {e}")
+            raise EngineFailed("Gemini Flash", str(e))

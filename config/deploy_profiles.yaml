@@ -1,0 +1,47 @@
+# TAIO RemakeStudio: Deploy Profiles Configuration
+# Xác định môi trường chạy, luồng/mức cho phép, thứ tự ưu tiên các engine
+
+profiles:
+  local:
+    name: "Máy cá nhân (Local Development)"
+    description: "Chạy trực tiếp trên máy Mac / PC của lập trình viên"
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 15
+    transcribe_chain: ["groq_turbo", "groq_large_v3", "phowhisper", "faster_whisper_local"]
+    translate_chain: ["gemini", "deepseek"]
+    tts_chain: ["edge_tts", "vieneu", "fpt_ai", "omnivoice"]
+    separator_chain: ["demucs"]
+
+  self_host:
+    name: "Máy chủ tự vận hành (Self-Hosted GPU Server)"
+    description: "Máy chủ riêng có GPU, hỗ trợ đầy đủ các model nội bộ"
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 30
+    transcribe_chain: ["phowhisper", "faster_whisper_local", "groq_turbo"]
+    translate_chain: ["gemini", "deepseek"]
+    tts_chain: ["vieneu", "omnivoice", "edge_tts"]
+    separator_chain: ["demucs"]
+
+  render_free:
+    name: "Render Cloud (Gói Miễn Phí 512MB RAM)"
+    description: "Tối ưu RAM siêu nhẹ, sử dụng API đám mây, tắt các model nặng chạy local"
+    allowed_flows: ["L1", "L2", "L4"]
+    allowed_levels: [1, 2]
+    max_duration_minutes: 5
+    transcribe_chain: ["groq_turbo", "groq_large_v3"]
+    translate_chain: ["gemini", "deepseek"]
+    tts_chain: ["edge_tts", "fpt_ai"]
+    separator_chain: []
+
+  render_starter:
+    name: "Render Cloud (Gói Starter Có Disk)"
+    description: "Hỗ trợ Mức 3 (ghép video ffmpeg) và thời lượng dài hơn"
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 10
+    transcribe_chain: ["groq_turbo", "groq_large_v3"]
+    translate_chain: ["gemini", "deepseek"]
+    tts_chain: ["edge_tts", "fpt_ai", "omnivoice"]
+    separator_chain: ["demucs"]

@@ -1,0 +1,53 @@
+# TAIO RemakeStudio: Intent Configuration (v0.3)
+# Định nghĩa 4 ý định lớn theo Mục 5.2
+
+intents:
+  listen_vi:
+    id: "listen_vi"
+    name: "Nghe bằng tiếng Việt"
+    short_desc: "Tự động phát hiện tiếng Anh (L1) hoặc ngoại ngữ khác (L2) để dịch sang tiếng Việt"
+    icon: "fa-language"
+    target_lang: "vi"
+    roles: ["super_admin", "level_1", "level_2"]
+    fields:
+      voice_select: true
+      target_lang_select: false
+      song_mode_toggle: true
+      stems_select: false
+
+  revoice:
+    id: "revoice"
+    name: "Đổi giọng đọc"
+    short_desc: "Giữ nguyên lời tiếng Việt, đổi sang giọng vùng miền (Bắc/Trung/Nam) hoặc giọng cá nhân"
+    icon: "fa-microphone-lines"
+    target_lang: "vi"
+    roles: ["super_admin", "level_1", "level_2"]
+    fields:
+      voice_select: true
+      target_lang_select: false
+      song_mode_toggle: false
+      stems_select: false
+
+  music_stems:
+    id: "music_stems"
+    name: "Tách nhạc để tập"
+    short_desc: "Tách bài hát thành 4 track (Trống, Bass, Vocals, Nhạc cụ) phục vụ tập luyện có chủ đích"
+    icon: "fa-drum"
+    roles: ["super_admin", "level_2"]
+    fields:
+      voice_select: false
+      target_lang_select: false
+      song_mode_toggle: false
+      stems_select: true
+
+  translate_intl:
+    id: "translate_intl"
+    name: "Dịch ra tiếng nước ngoài"
+    short_desc: "Xuất khẩu nội dung tiếng Việt sang tiếng Anh, Trung, Nhật, Hàn (Super Admin)"
+    icon: "fa-globe"
+    roles: ["super_admin"]
+    fields:
+      voice_select: true
+      target_lang_select: true
+      song_mode_toggle: false
+      stems_select: false

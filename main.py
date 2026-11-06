@@ -39,6 +39,13 @@ def main():
     port = int(os.getenv("PORT", 8000))
     host = "0.0.0.0"
 
+    # In bảng kiểm tra tính sẵn sàng khi khởi động (Mục 3)
+    try:
+        from channels.web.readiness import print_readiness_terminal
+        print_readiness_terminal()
+    except Exception as e:
+        logger.warning(f"Không thể in bảng sẵn sàng: {e}")
+
     # Chạy Telegram Bot trong một daemon thread
     tg_thread = threading.Thread(target=start_telegram_worker, daemon=True)
     tg_thread.start()

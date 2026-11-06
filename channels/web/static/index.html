@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAIO RemakeStudio | Biến Video Ngoại Ngữ Thành Tiếng Việt</title>
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #080c14;
+            color: #f1f5f9;
+        }
+        [hidden] {
+            display: none !important;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .intent-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .intent-card:not(.disabled):hover {
+            transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        }
+        .intent-card.selected {
+            border-color: #3b82f6;
+            background: rgba(30, 58, 138, 0.3);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        .intent-card.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header & Readiness Badge -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-headphones-simple text-white text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">
+                        TAIO <span class="text-white font-medium text-base">RemakeStudio</span>
+                    </span>
+                    <span class="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700/50">v0.3 Intent-Driven</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Nút Tình trạng hệ thống -->
+                <button type="button" onclick="toggleReadinessPanel()" class="flex items-center space-x-2 text-xs bg-slate-800/90 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                    <span id="readiness-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span id="readiness-status-text" class="text-slate-300 font-semibold">Tình trạng hệ thống</span>
+                    <i class="fa-solid fa-chevron-down text-slate-500 text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Khung Tình trạng hệ thống thu gọn được (Mục 3) -->
+    <div id="readiness-panel" hidden class="max-w-6xl mx-auto px-4 w-full mt-3">
+        <div class="glass-panel rounded-2xl p-5 border border-slate-700/80 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-microchip text-indigo-400"></i>
+                    <h3 class="text-sm font-bold text-white">Kiểm tra độ sẵn sàng của các Engine</h3>
+                </div>
+                <button onclick="toggleReadinessPanel()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i> Đóng</button>
+            </div>
+            <div id="readiness-steps-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <!-- Rendered dynamically -->
+            </div>
+            <div id="readiness-missing-box" hidden class="p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-xs text-amber-300 space-y-1">
+                <div class="font-bold flex items-center space-x-1.5"><i class="fa-solid fa-triangle-exclamation"></i><span>Khóa cấu hình còn thiếu trong file .env:</span></div>
+                <p id="readiness-missing-keys" class="text-slate-300 font-mono"></p>
+                <p class="text-slate-400 text-[11px]">💡 Mở file .env và điền các khóa API tương ứng, sau đó khởi động lại máy chủ để mở khóa các thẻ ý định.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+        
+        <!-- Hero Title -->
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                Nghe lại nội dung nước ngoài bằng <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">tiếng Việt</span>
+            </h1>
+            <p class="text-slate-400 text-sm max-w-xl mx-auto">
+                Dán link TikTok/Facebook hoặc tải file lên. Hệ thống sẽ tự phát hiện ngôn ngữ và thực hiện theo đúng ý định của bạn.
+            </p>
+        </div>
+
+        <!-- BƯỚC 1: DÁN LINK HOẶC THẢ FILE (Mục 5.1) -->
+        <div class="glass-panel rounded-2xl p-6 sm:p-7 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">1</span>
+                    <span>Đầu vào: Link hoặc File</span>
+                </h2>
+                <div class="flex space-x-2 text-xs">
+                    <button type="button" id="tab-link-btn" onclick="switchInputSource('link')" class="py-1 px-3 rounded-lg bg-blue-600 text-white font-semibold">Dán Link</button>
+                    <button type="button" id="tab-file-btn" onclick="switchInputSource('file')" class="py-1 px-3 rounded-lg text-slate-400 hover:text-white font-semibold">Tải File Lên</button>
+                </div>
+            </div>
+
+            <!-- Input Box -->
+            <div id="source-link-box" class="space-y-2">
+                <div class="relative">
+                    <input type="url" id="video-url-input" placeholder="Dán link TikTok hoặc Facebook Reel vào đây..." 
+                        class="w-full pl-4 pr-24 py-3.5 bg-slate-900 rounded-xl border border-slate-700/80 focus:border-blue-500 text-sm text-white placeholder-slate-500 outline-none transition"
+                        onchange="probeMediaInput()">
+                    <button type="button" onclick="probeMediaInput()" class="absolute right-2 top-2 bottom-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Kiểm tra</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="source-file-box" hidden class="space-y-2">
+                <div class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-6 text-center cursor-pointer transition bg-slate-900/40" onclick="document.getElementById('file-upload-input').click()">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-400 mb-2"></i>
+                    <p class="text-sm font-medium text-slate-300" id="file-label-text">Chọn tệp video MP4 hoặc âm thanh MP3, M4A</p>
+                    <input type="file" id="file-upload-input" class="hidden" accept="video/*,audio/*" onchange="onLocalFilePicked(this)">
+                </div>
+            </div>
+
+            <!-- Media Preview Card (Hiện ngay sau khi probe thành công) -->
+            <div id="probe-card" hidden class="p-4 bg-slate-900/90 rounded-xl border border-slate-700/80 flex flex-col sm:flex-row items-center gap-4">
+                <div id="probe-thumb-box" class="w-24 h-24 rounded-lg bg-black flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img id="probe-thumb" src="" alt="Thumbnail" class="w-full h-full object-cover hidden">
+                    <i id="probe-thumb-icon" class="fa-solid fa-film text-2xl text-slate-600"></i>
+                </div>
+                <div class="flex-1 space-y-1 text-center sm:text-left">
+                    <h3 id="probe-title" class="text-sm font-bold text-white line-clamp-1">Tiêu đề video</h3>
+                    <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1 justify-center sm:justify-start">
+                        <span>Nền tảng: <strong id="probe-platform" class="text-slate-200">TikTok</strong></span>
+                        <span>Thời lượng: <strong id="probe-duration" class="text-slate-200">0s</strong></span>
+                    </div>
+                    <div class="text-xs text-emerald-400 font-semibold pt-1">
+                        <i class="fa-regular fa-clock mr-1"></i>
+                        <span id="probe-cost">Sẽ trừ khoảng 1 phút hạn mức</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Probe Error Banner -->
+            <div id="probe-error-box" hidden class="p-3.5 bg-rose-950/60 border border-rose-800 rounded-xl text-xs text-rose-300 flex items-center justify-between">
+                <span id="probe-error-msg" class="flex-1 mr-2"></span>
+                <button type="button" id="probe-error-action-btn" onclick="switchInputSource('file')" class="px-3 py-1 bg-rose-800 hover:bg-rose-700 text-white rounded-lg font-bold flex-shrink-0">Tải file lên</button>
+            </div>
+        </div>
+
+        <!-- BƯỚC 2: CHỌN Ý ĐỊNH (Mục 5.2 - 4 Thẻ Lớn) -->
+        <div id="intents-container" class="glass-panel rounded-2xl p-6 sm:p-7 shadow-2xl space-y-6">
+            <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-800 pb-3">
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">2</span>
+                <span>Chọn việc bạn cần làm (Ý định)</span>
+            </h2>
+
+            <div id="intent-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Thẻ 1: Nghe bằng tiếng Việt -->
+                <div id="intent-card-listen_vi" onclick="selectIntent('listen_vi')" class="intent-card selected p-4 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-language"></i>
+                        </div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-800/60">Tự chọn L1 / L2</span>
+                    </div>
+                    <div class="text-sm font-bold text-white">Nghe bằng tiếng Việt</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">Tự động phát hiện tiếng Anh hoặc ngoại ngữ khác và dịch sang tiếng Việt</p>
+                    <div class="disabled-hint text-[11px] text-amber-400 pt-1" hidden></div>
+                </div>
+
+                <!-- Thẻ 2: Đổi giọng đọc -->
+                <div id="intent-card-revoice" onclick="selectIntent('revoice')" class="intent-card p-4 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="w-9 h-9 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-microphone-lines"></i>
+                        </div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-800/60">Luồng L4</span>
+                    </div>
+                    <div class="text-sm font-bold text-white">Đổi giọng đọc</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">Giữ nguyên lời tiếng Việt, đổi sang giọng đọc vùng miền (Bắc/Trung/Nam) thân thuộc</p>
+                    <div class="disabled-hint text-[11px] text-amber-400 pt-1" hidden></div>
+                </div>
+
+                <!-- Thẻ 3: Tách nhạc để tập -->
+                <div id="intent-card-music_stems" onclick="selectIntent('music_stems')" class="intent-card p-4 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="w-9 h-9 rounded-lg bg-pink-600/20 text-pink-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-drum"></i>
+                        </div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-pink-900/40 text-pink-300 border border-pink-800/60">Luồng L5 (Stems)</span>
+                    </div>
+                    <div class="text-sm font-bold text-white">Tách nhạc để tập</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">Tách bài hát thành 4 track riêng (Trống, Bass, Vocals, Nhạc cụ) phục vụ tập nhạc</p>
+                    <div class="disabled-hint text-[11px] text-amber-400 pt-1" hidden></div>
+                </div>
+
+                <!-- Thẻ 4: Dịch ra tiếng nước ngoài -->
+                <div id="intent-card-translate_intl" onclick="selectIntent('translate_intl')" class="intent-card p-4 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-globe"></i>
+                        </div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300 border border-emerald-800/60">Luồng L3 (Admin)</span>
+                    </div>
+                    <div class="text-sm font-bold text-white">Dịch ra tiếng nước ngoài</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">Xuất khẩu video tiếng Việt sang tiếng Anh, Trung, Nhật, Hàn quốc tế</p>
+                    <div class="disabled-hint text-[11px] text-amber-400 pt-1" hidden></div>
+                </div>
+            </div>
+
+            <!-- MA TRẬN TRƯỜNG THEO Ý ĐỊNH (Mục 5.3) -->
+            <div id="intent-fields-matrix" class="space-y-4 pt-3 border-t border-slate-800">
+                
+                <!-- Trường: Giọng đọc & Nghe thử (Mục 5.5) -->
+                <div id="field-voice-select" class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>Giọng Đọc Mong Muốn</span>
+                        <span class="text-[11px] text-blue-400 font-normal">Có nghe thử mẫu câu 3s</span>
+                    </label>
+                    <div class="flex items-center space-x-2">
+                        <select id="voice-select-box" class="flex-1 py-2.5 px-3 bg-slate-900 rounded-xl border border-slate-700 text-xs sm:text-sm text-white focus:border-blue-500 outline-none">
+                            <!-- Populated dynamically with voices -->
+                        </select>
+                        <button type="button" id="preview-voice-btn" onclick="playVoiceSample()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-slate-700 text-xs font-bold transition flex items-center space-x-1.5 flex-shrink-0">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Nghe thử</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trường: Chế độ bài hát (Song Mode) -->
+                <div id="field-song-mode" class="flex items-center justify-between p-3.5 bg-slate-900/70 rounded-xl border border-slate-800">
+                    <div>
+                        <div class="text-xs font-semibold text-white">Chế độ Bài Hát (Song Mode)</div>
+                        <div class="text-[11px] text-slate-400">Tách giọng hát trước khi chép lời, kèm phiên âm Pinyin/Romaji 3 dòng</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="song-mode-checkbox" class="sr-only peer">
+                        <div class="w-10 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+
+                <!-- Trường: Ngôn ngữ đích (Chỉ cho L3) -->
+                <div id="field-target-lang" hidden class="space-y-1.5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Ngôn ngữ đích quốc tế</label>
+                    <select id="target-lang-select" class="w-full py-2.5 px-3 bg-slate-900 rounded-xl border border-slate-700 text-xs text-white">
+                        <option value="en">Tiếng Anh (English)</option>
+                        <option value="zh">Tiếng Trung (Mandarin)</option>
+                        <option value="ja">Tiếng Nhật (Japanese)</option>
+                        <option value="ko">Tiếng Hàn (Korean)</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Nút Bắt đầu thực thi -->
+            <div>
+                <button type="button" id="start-task-btn" onclick="submitIntentProcess()" class="w-full py-3.5 px-6 rounded-xl font-bold text-white text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-600/30 transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Bắt Đầu Xử Lý</span>
+                </button>
+            </div>
+
+            <!-- TIẾN TRÌNH THẬT THEO TỪNG BƯỚC (Mục 5.6 - Bỏ thanh % cứng) -->
+            <div id="steps-progress-box" hidden class="space-y-3 pt-4 border-t border-slate-800">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tiến trình thực thi:</div>
+                <div id="steps-list" class="space-y-2">
+                    <!-- Populated dynamically from API task steps -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BƯỚC 3: TRANG KẾT QUẢ & MỞ RỘNG MỨC (Mục 5.4, 5.7) -->
+        <div id="results-view" hidden class="glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white" id="res-video-title">Tác phẩm hoàn thành</h2>
+                    <p class="text-xs text-slate-400" id="res-video-meta">Ngôn ngữ phát hiện: Tiếng Anh ➔ Tiếng Việt</p>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">Mức 1 Sẵn Sàng</span>
+            </div>
+
+            <!-- Interactive Player with Synced Subtitles (Mục 5.7) -->
+            <div id="interactive-player-card" class="p-4 bg-slate-900/90 rounded-xl border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+                    <span>Trình phát kèm phụ đề tương tác</span>
+                    <span class="text-[11px] text-blue-400">Nhấp vào câu thoại để nhảy tới giây đó</span>
+                </div>
+                <!-- Dual Subtitle List -->
+                <div id="synced-transcript-box" class="max-h-64 overflow-y-auto p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-2.5 font-mono">
+                    <!-- Synced segments with clickable timestamps -->
+                </div>
+            </div>
+
+            <!-- Các nút mở rộng Mức (Mục 5.4: Progressive Disclosure) -->
+            <div id="extend-levels-card" class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+                <div class="text-xs font-bold text-slate-300 uppercase tracking-wider">Làm thêm các mức đầu ra nâng cao (Từ bản dịch sẵn có):</div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button type="button" id="btn-extend-level2" onclick="extendTask(2)" class="py-2.5 px-3 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 text-xs font-bold text-purple-200 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <span>🎧 Nghe Bản Đọc (Mức 2)</span>
+                    </button>
+                    <button type="button" id="btn-extend-level3" onclick="extendTask(3)" class="py-2.5 px-3 rounded-xl bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/50 text-xs font-bold text-rose-200 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-film"></i>
+                        <span>🎬 Xuất Video Lồng Tiếng (Mức 3)</span>
+                    </button>
+                    <button type="button" id="btn-extend-level4" onclick="extendTask(4)" class="py-2.5 px-3 rounded-xl bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/50 text-xs font-bold text-amber-200 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>📝 Tóm Tắt NotebookLM (Mức 4)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Audio/Video Preview khi đã làm Mức 2 hoặc Mức 3 -->
+            <div id="media-preview-row" hidden class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div id="audio-preview-container" hidden class="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+                    <div class="text-xs font-bold text-slate-400">Giọng đọc lồng tiếng (Mức 2):</div>
+                    <audio id="main-audio-player" controls class="w-full h-10"></audio>
+                </div>
+                <div id="video-preview-container" hidden class="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+                    <div class="text-xs font-bold text-slate-400">Video ghép phụ đề & giọng mới (Mức 3):</div>
+                    <video id="main-video-player" controls class="w-full max-h-52 bg-black rounded-lg"></video>
+                </div>
+            </div>
+
+            <!-- Tải về các tệp sản phẩm (Mục 5.7) -->
+            <div class="space-y-2">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tải về các tệp sản phẩm:</div>
+                <div id="download-files-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-panel border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>TAIO RemakeStudio &copy; 2026 · "Không cần giỏi ngoại ngữ. Nghe lại bằng tiếng Việt."</p>
+    </footer>
+
+    <!-- Audio Element for Voice Preview -->
+    <audio id="voice-sample-player" class="hidden"></audio>
+
+    <!-- Modular Scripts (Mục 7) -->
+    <script src="/static/voices.js"></script>
+    <script src="/static/steps.js"></script>
+    <script src="/static/player.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -200,7 +200,16 @@ async def get_task_status(task_id: str):
 
 @app.get("/api/download/{task_id}/{filename}")
 async def download_output_file(task_id: str, filename: str):
-    file_path = os.path.join(OUTPUT_DIR, task_id, filename)
+    task_dir = os.path.join(OUTPUT_DIR, task_id)
+    file_path = os.path.join(task_dir, filename)
+
+    # Tìm kiếm đệ quy trong thư mục task nếu chưa thấy ở thư mục gốc
+    if not os.path.exists(file_path):
+        for root, dirs, files in os.walk(task_dir):
+            if filename in files:
+                file_path = os.path.join(root, filename)
+                break
+
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Tệp không tồn tại hoặc đã hết hạn lưu trữ.")
     return FileResponse(file_path, filename=filename)

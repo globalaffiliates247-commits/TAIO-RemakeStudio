@@ -1,5 +1,6 @@
 # TAIO RemakeStudio: Danh mục giọng đọc vùng miền và quốc tế
-# Engines: vieneu, edge_tts, fpt_ai, omnivoice
+# Engines: edge_tts, vieneu, voxcpm, fpt_ai, omnivoice
+# Chứa mô tả prompt giọng vùng miền cho VoxCPM2
 
 voices:
   # Giọng Việt Bắc
@@ -10,6 +11,7 @@ voices:
     gender: "female"
     engine: "edge_tts"
     voice_key: "vi-VN-HoaiMyNeural"
+    voxcpm_prompt: "Giọng nữ Hà Nội chuẩn, thanh lịch, nhẹ nhàng, truyền cảm và tự nhiên."
     tags: ["tin_tuc", "ke_chuyen", "tu_nhien"]
 
   vi_north_male_1:
@@ -19,6 +21,7 @@ voices:
     gender: "male"
     engine: "edge_tts"
     voice_key: "vi-VN-NamMinhNeural"
+    voxcpm_prompt: "Giọng nam miền Bắc trầm ấm, dõng dạc, tự tin, phong thái chuyên nghiệp."
     tags: ["thuyet_minh", "khoa_hoc", "review"]
 
   # Giọng Việt Nam
@@ -29,6 +32,7 @@ voices:
     gender: "female"
     engine: "vieneu"
     voice_key: "vieneu_south_female_01"
+    voxcpm_prompt: "Giọng nữ Sài Gòn ngọt ngào, tự nhiên, gần gũi, tươi vui và duyên dáng."
     tags: ["tiktok", "tinh_cam", "gan_gui"]
 
   vi_south_male_1:
@@ -38,6 +42,7 @@ voices:
     gender: "male"
     engine: "vieneu"
     voice_key: "vieneu_south_male_01"
+    voxcpm_prompt: "Giọng nam miền Nam hào sảng, năng động, rõ lời và thân thiện."
     tags: ["vlog", "cong_nghe", "hai_huoc"]
 
   # Giọng Việt Trung (Miền Trung)
@@ -48,9 +53,10 @@ voices:
     gender: "female"
     engine: "vieneu"
     voice_key: "vieneu_central_female_01"
+    voxcpm_prompt: "Giọng nữ miền Trung (Huế) dịu dàng, êm đềm, ngọt bùi, đậm chất truyền thống."
     tags: ["que_huong", "tho", "truyen_thong"]
 
-  # Giọng Quốc tế (OmniVoice - Super Admin)
+  # Giọng Quốc tế (OmniVoice / VoxCPM - Super Admin)
   en_us_female:
     id: "en_us_female"
     name: "Jenny (US English)"
@@ -58,6 +64,7 @@ voices:
     gender: "female"
     engine: "omnivoice"
     voice_key: "en-US-JennyNeural"
+    voxcpm_prompt: "Clear and expressive American English female voice, natural broadcast quality."
     tags: ["international"]
 
   zh_cn_female:
@@ -67,4 +74,5 @@ voices:
     gender: "female"
     engine: "omnivoice"
     voice_key: "zh-CN-XiaoxiaoNeural"
+    voxcpm_prompt: "Standard Mandarin Chinese female voice, clear articulation and melodic tone."
     tags: ["international"]

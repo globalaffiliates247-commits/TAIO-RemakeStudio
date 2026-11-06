@@ -10,7 +10,7 @@ profiles:
     max_duration_minutes: 15
     transcribe_chain: ["groq_turbo", "groq_large_v3", "phowhisper", "faster_whisper_local"]
     translate_chain: ["gemini", "deepseek"]
-    tts_chain: ["edge_tts", "vieneu", "fpt_ai", "omnivoice"]
+    tts_chain: ["edge_tts", "voxcpm", "vieneu", "fpt_ai", "omnivoice"]
     separator_chain: ["demucs"]
 
   self_host:
@@ -21,7 +21,7 @@ profiles:
     max_duration_minutes: 30
     transcribe_chain: ["phowhisper", "faster_whisper_local", "groq_turbo"]
     translate_chain: ["gemini", "deepseek"]
-    tts_chain: ["vieneu", "omnivoice", "edge_tts"]
+    tts_chain: ["vieneu", "voxcpm", "omnivoice", "edge_tts"]
     separator_chain: ["demucs"]
 
   render_free:
@@ -43,5 +43,5 @@ profiles:
     max_duration_minutes: 10
     transcribe_chain: ["groq_turbo", "groq_large_v3"]
     translate_chain: ["gemini", "deepseek"]
-    tts_chain: ["edge_tts", "fpt_ai", "omnivoice"]
+    tts_chain: ["edge_tts", "voxcpm", "fpt_ai", "omnivoice"]
     separator_chain: ["demucs"]

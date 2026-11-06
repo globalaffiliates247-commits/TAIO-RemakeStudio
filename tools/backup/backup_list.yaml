@@ -24,9 +24,19 @@ tools:
     purpose: "Chép lời tiếng Việt chính xác đa vùng miền"
 
   - name: "vieneu-tts"
-    repo: "https://github.com/vieneu/vieneu-tts.git"
+    repo: "https://github.com/pnnbao97/VieNeu-TTS.git"
     license: "Apache-2.0"
     purpose: "Giọng đọc tiếng Việt Bắc/Trung/Nam và nhân bản giọng"
+
+  - name: "voxcpm"
+    repo: "https://github.com/Tencent/VoxCPM.git"
+    license: "Apache-2.0"
+    purpose: "TTS ~2B tham số (<15GB), hỗ trợ voice prompt đa vùng miền qua vLLM-Omni"
+
+  - name: "silero-vad"
+    repo: "https://github.com/snakers4/silero-vad.git"
+    license: "MIT"
+    purpose: "Bộ phát hiện giọng nói (VAD) lọc khoảng lặng và nhiễu âm cho faster-whisper"
 
   - name: "omnivoice"
     repo: "https://github.com/k2-fsa/omnivoice.git"

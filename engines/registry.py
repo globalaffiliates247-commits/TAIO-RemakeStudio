@@ -56,6 +56,7 @@ ENGINES: Dict[str, EngineMetadata] = {
 
     # 3. Giọng đọc (TTS)
     "edge_tts": EngineMetadata("Microsoft Edge TTS", "tts", "engines.tts.edge_tts_fallback.EdgeTTSEngine", required_libs=["edge_tts"]),
+    "voxcpm": EngineMetadata("VoxCPM2", "tts", "engines.tts.voxcpm.VoxCPMEngine", required_env=["VOXCPM_SERVER_URL"], required_libs=["requests"]),
     "vieneu": EngineMetadata("VieNeu-TTS", "tts", "engines.tts.vieneu.VieNeuTTSEngine"),
     "fpt_ai": EngineMetadata("FPT.AI Text to Speech", "tts", "engines.tts.fpt_ai.FptAITTSEngine", required_env=["FPT_AI_API_KEY"]),
     "omnivoice": EngineMetadata("OmniVoice International", "tts", "engines.tts.omnivoice.OmniVoiceEngine", required_env=["OMNIVOICE_SERVER_URL"]),
@@ -136,25 +137,92 @@ class TranslateChain:
 
 
 class TTSRouter:
-    """Điều hướng tổng hợp giọng đọc."""
-    def __init__(self):
-        pass
+    """Điều hướng tổng hợp giọng đọc dựa trên voices.yaml và deploy_profiles.yaml."""
+    def __init__(self, preferred_engines: Optional[List[str]] = None):
+        profile = DeployProfile()
+        self.engine_keys = preferred_engines or profile.tts_chain
+        self.voices = self._load_voices()
 
-    def synthesize(self, text: str, output_path: str, voice_id: str = "vi_north_female_1", speed_multiplier: float = 1.0) -> Tuple[str, str]:
-        # Xác định engine từ voice_id qua voices.yaml hoặc fallback
-        from engines.tts.edge_tts_fallback import EdgeTTSEngine
-        engine = EdgeTTSEngine()
-        used_engine = "edge_tts"
+    def _load_voices(self) -> Dict[str, Any]:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        voices_file = os.path.join(base_dir, "config", "voices.yaml")
+        if os.path.exists(voices_file):
+            try:
+                import yaml
+                with open(voices_file, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                    return data.get("voices", {})
+            except Exception as e:
+                logger.warning(f"Không thể đọc config voices.yaml: {e}")
+        return {}
 
-        ready, msg = ENGINES["edge_tts"].check_readiness()
-        if not ready:
-            raise EngineUnavailable("Edge TTS", msg, setup_hint="Cần cài đặt thư viện 'edge-tts'")
+    def synthesize(
+        self,
+        text: str,
+        output_path: str,
+        voice_id: str = "vi_north_female_1",
+        speed_multiplier: float = 1.0
+    ) -> Tuple[str, str]:
+        voice_info = self.voices.get(voice_id, {})
+        target_engine = voice_info.get("engine", "edge_tts")
 
-        try:
-            res_path = engine.synthesize(text, output_path, speed_multiplier=speed_multiplier)
-            return res_path, used_engine
-        except Exception as e:
-            raise EngineFailed("Edge TTS", str(e))
+        # Thứ tự thử: engine của giọng trước, sau đó tới các engine trong chain profile
+        engines_to_try = [target_engine] + [e for e in self.engine_keys if e != target_engine]
+
+        reasons = []
+        for eng_key in engines_to_try:
+            if eng_key not in ENGINES:
+                continue
+
+            meta = ENGINES[eng_key]
+            ready, msg = meta.check_readiness()
+            if not ready:
+                reasons.append(f"{meta.name}: {msg}")
+                continue
+
+            try:
+                if eng_key == "voxcpm":
+                    from engines.tts.voxcpm import VoxCPMEngine
+                    prompt = voice_info.get("voxcpm_prompt")
+                    engine = VoxCPMEngine(voice_prompt=prompt)
+                    path = engine.synthesize(text, output_path, speed_multiplier=speed_multiplier, voice_prompt=prompt)
+                    return path, meta.name
+
+                elif eng_key == "edge_tts":
+                    from engines.tts.edge_tts_fallback import EdgeTTSEngine
+                    vkey = voice_info.get("voice_key") if voice_info.get("engine") == "edge_tts" else "vi-VN-HoaiMyNeural"
+                    engine = EdgeTTSEngine(default_voice=vkey)
+                    path = engine.synthesize(text, output_path, speed_multiplier=speed_multiplier, voice=vkey)
+                    return path, meta.name
+
+                elif eng_key == "vieneu":
+                    from engines.tts.vieneu import VieNeuTTSEngine
+                    engine = VieNeuTTSEngine()
+                    path = engine.synthesize(text, output_path, speed_multiplier=speed_multiplier)
+                    return path, meta.name
+
+                elif eng_key == "omnivoice":
+                    from engines.tts.omnivoice import OmniVoiceEngine
+                    vkey = voice_info.get("voice_key", "en-US-JennyNeural")
+                    engine = OmniVoiceEngine(voice_name=vkey)
+                    path = engine.synthesize(text, output_path, voice_name=vkey, speed=speed_multiplier)
+                    return path, meta.name
+
+                elif eng_key == "fpt_ai":
+                    from engines.tts.fpt_ai import FptAITTSEngine
+                    engine = FptAITTSEngine()
+                    path = engine.synthesize(text, output_path, speed=speed_multiplier)
+                    return path, meta.name
+
+            except Exception as e:
+                logger.warning(f"TTS Engine {meta.name} tổng hợp thất bại ({e}), chuyển sang engine dự phòng...")
+                reasons.append(f"{meta.name}: {str(e)}")
+
+        raise EngineUnavailable(
+            "Hệ thống giọng đọc (TTS)",
+            "; ".join(reasons),
+            setup_hint="Kiểm tra kết nối internet hoặc cài đặt thư viện edge-tts / chạy server VoxCPM2."
+        )
 
 
 class SeparatorChain:

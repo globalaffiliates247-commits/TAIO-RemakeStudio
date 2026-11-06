@@ -18,8 +18,8 @@ logger = logging.getLogger("taio.outputs.level2_voice")
 class VoiceSynthesizer:
     def __init__(self, tts_engine=None):
         if tts_engine is None:
-            from engines.tts.edge_tts_fallback import EdgeTTSEngine
-            self.tts_engine = EdgeTTSEngine()
+            from engines.registry import TTSRouter
+            self.tts_engine = TTSRouter()
         else:
             self.tts_engine = tts_engine
 
@@ -57,8 +57,11 @@ class VoiceSynthesizer:
                 elif natural_duration < target_duration * 0.7:
                     speed_ratio = max(0.85, natural_duration / target_duration)
 
-                # Tổng hợp âm thanh đoạn này
-                self.tts_engine.synthesize(text_to_read, seg_raw_path, speed_multiplier=speed_ratio)
+                # Tổng hợp âm thanh đoạn này qua TTSRouter
+                try:
+                    self.tts_engine.synthesize(text_to_read, seg_raw_path, voice_id=voice_id, speed_multiplier=speed_ratio)
+                except TypeError:
+                    self.tts_engine.synthesize(text_to_read, seg_raw_path, speed_multiplier=speed_ratio)
                 seg.audio_path = seg_raw_path
                 segment_audio_files.append(seg_raw_path)
 

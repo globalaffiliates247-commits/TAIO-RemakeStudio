@@ -42,17 +42,54 @@ class EngineMetadata:
         return True, "Sẵn sàng hoạt động"
 
 
+def _check_server_reachable(url: str, timeout: float = 3.0) -> Tuple[bool, str]:
+    """Kiểm tra server HTTP có phản hồi không (dùng cho ollama_qwen, vieneu_server)."""
+    import requests as _req
+    try:
+        resp = _req.get(url, timeout=timeout)
+        return resp.status_code < 500, ""
+    except Exception as e:
+        return False, str(e)
+
+
+class _ServerCheckEngine(EngineMetadata):
+    """Engine có thêm kiểm tra server HTTP khi check_readiness."""
+    def __init__(self, name, category, cls_path, health_url_env, health_path, required_env=None, required_libs=None):
+        super().__init__(name, category, cls_path, required_env, required_libs)
+        self.health_url_env = health_url_env
+        self.health_path = health_path
+
+    def check_readiness(self) -> Tuple[bool, str]:
+        ready, msg = super().check_readiness()
+        if not ready:
+            return ready, msg
+        base = os.getenv(self.health_url_env, "")
+        if not base:
+            return False, f"Chưa đặt {self.health_url_env}"
+        url = base.rstrip("/").rsplit("/v1", 1)[0] + self.health_path
+        ok, err = _check_server_reachable(url)
+        if not ok:
+            return False, f"Server {base} chưa chạy ({err}). Khởi động bằng scripts/start_mac_local.sh."
+        return True, "Sẵn sàng hoạt động"
+
+
 # Danh bạ toàn bộ các Engine trong hệ thống
 ENGINES: Dict[str, EngineMetadata] = {
-    # 1. Chép lời (Transcribe)
+    # 1. Chép lời (Transcribe) — Cloud API
     "groq_turbo": EngineMetadata("Groq Whisper Large v3 Turbo", "transcribe", "engines.transcribe.groq_turbo.GroqTurboTranscriber", required_env=["GROQ_API_KEY"], required_libs=["groq"]),
     "groq_large_v3": EngineMetadata("Groq Whisper Large v3", "transcribe", "engines.transcribe.groq_large_v3.GroqLargeV3Transcriber", required_env=["GROQ_API_KEY"], required_libs=["groq"]),
     "phowhisper": EngineMetadata("VinAI PhoWhisper Medium", "transcribe", "engines.transcribe.phowhisper.PhoWhisperTranscriber", required_libs=["torch", "transformers"]),
     "faster_whisper_local": EngineMetadata("Faster Whisper Local", "transcribe", "engines.transcribe.faster_whisper_local.FasterWhisperTranscriber", required_libs=["faster_whisper"]),
+    # 1b. Chép lời — Mac local (không cần API key)
+    "hf_whisper_local": EngineMetadata("Whisper trên máy", "transcribe", "engines.transcribe.hf_whisper_local.HFWhisperTranscriber", required_libs=["torch", "transformers"]),
+    "mlx_whisper_local": EngineMetadata("Whisper MLX trên máy", "transcribe", "engines.transcribe.mlx_whisper_local.MLXWhisperTranscriber", required_libs=["mlx_whisper"]),
 
-    # 2. Dịch thuật (Translate)
+    # 2. Dịch thuật (Translate) — Cloud API
     "gemini": EngineMetadata("Google Gemini Flash", "translate", "engines.translate.gemini.GeminiTranslator", required_env=["GEMINI_API_KEY"], required_libs=["google.generativeai"]),
     "deepseek": EngineMetadata("DeepSeek Chat", "translate", "engines.translate.deepseek.DeepSeekTranslator", required_env=["DEEPSEEK_API_KEY"], required_libs=["openai"]),
+    # 2b. Dịch thuật — Mac local (Ollama / llama.cpp / bất kỳ API chuẩn OpenAI)
+    "ollama_qwen": _ServerCheckEngine("Qwen3 qua Ollama/llama.cpp", "translate", "engines.translate.openai_compat.OpenAICompatTranslator",
+                                      health_url_env="LLM_BASE_URL", health_path="/v1/models", required_libs=["openai"]),
 
     # 3. Giọng đọc (TTS)
     "edge_tts": EngineMetadata("Microsoft Edge TTS", "tts", "engines.tts.edge_tts_fallback.EdgeTTSEngine", required_libs=["edge_tts"]),
@@ -60,6 +97,10 @@ ENGINES: Dict[str, EngineMetadata] = {
     "vieneu": EngineMetadata("VieNeu-TTS", "tts", "engines.tts.vieneu.VieNeuTTSEngine"),
     "fpt_ai": EngineMetadata("FPT.AI Text to Speech", "tts", "engines.tts.fpt_ai.FptAITTSEngine", required_env=["FPT_AI_API_KEY"]),
     "omnivoice": EngineMetadata("OmniVoice International", "tts", "engines.tts.omnivoice.OmniVoiceEngine", required_env=["OMNIVOICE_SERVER_URL"]),
+    # 3b. TTS — Mac local
+    "vieneu_server": _ServerCheckEngine("VieNeu-TTS trên máy", "tts", "engines.tts.openai_speech.OpenAISpeechEngine",
+                                        health_url_env="VIENEU_BASE_URL", health_path="/v1/voices", required_env=["VIENEU_BASE_URL"]),
+    "omnivoice_local": EngineMetadata("OmniVoice trên máy", "tts", "engines.tts.omnivoice_local.OmniVoiceLocalEngine", required_libs=["omnivoice", "torch", "soundfile"]),
 
     # 4. Tách nhạc (Separate)
     "demucs": EngineMetadata("Demucs Audio Separator", "separate", "engines.separate.demucs.DemucsSeparator", required_libs=["demucs", "torch"])
@@ -156,12 +197,22 @@ class TTSRouter:
                 logger.warning(f"Không thể đọc config voices.yaml: {e}")
         return {}
 
+    def get_available_voices(self) -> List[Dict[str, Any]]:
+        """Trả về danh sách giọng thuộc tts_chain của profile đang chạy."""
+        result = []
+        for v_id, v_info in self.voices.items():
+            if v_info.get("engine", "") in self.engine_keys:
+                v_info["id"] = v_id
+                result.append(v_info)
+        return result
+
     def synthesize(
         self,
         text: str,
         output_path: str,
         voice_id: str = "vi_north_female_1",
-        speed_multiplier: float = 1.0
+        speed_multiplier: float = 1.0,
+        duration: Optional[float] = None,
     ) -> Tuple[str, str]:
         voice_info = self.voices.get(voice_id, {})
         target_engine = voice_info.get("engine", "edge_tts")
@@ -214,6 +265,23 @@ class TTSRouter:
                     path = engine.synthesize(text, output_path, speed=speed_multiplier)
                     return path, meta.name
 
+                elif eng_key == "vieneu_server":
+                    from engines.tts.openai_speech import OpenAISpeechEngine
+                    engine = OpenAISpeechEngine(voice=voice_info.get("voice_key"), env_prefix="VIENEU")
+                    path = engine.synthesize(text, output_path, speed_multiplier=speed_multiplier)
+                    return path, meta.name
+
+                elif eng_key == "omnivoice_local":
+                    from engines.tts.omnivoice_local import OmniVoiceLocalEngine
+                    engine = OmniVoiceLocalEngine(
+                        language=voice_info.get("language"),
+                        instruct=voice_info.get("omnivoice_instruct"),
+                        ref_audio=voice_info.get("omnivoice_ref_audio"),
+                        ref_text=voice_info.get("omnivoice_ref_text"),
+                    )
+                    path = engine.synthesize(text, output_path, speed_multiplier=speed_multiplier, duration=duration)
+                    return path, meta.name
+
             except Exception as e:
                 logger.warning(f"TTS Engine {meta.name} tổng hợp thất bại ({e}), chuyển sang engine dự phòng...")
                 reasons.append(f"{meta.name}: {str(e)}")
@@ -221,7 +289,7 @@ class TTSRouter:
         raise EngineUnavailable(
             "Hệ thống giọng đọc (TTS)",
             "; ".join(reasons),
-            setup_hint="Kiểm tra kết nối internet hoặc cài đặt thư viện edge-tts / chạy server VoxCPM2."
+            setup_hint="Chạy scripts/start_mac_local.sh hoặc kiểm tra cài đặt engine giọng đọc."
         )
 
 

@@ -45,3 +45,42 @@ profiles:
     translate_chain: ["gemini", "deepseek"]
     tts_chain: ["edge_tts", "voxcpm", "fpt_ai", "omnivoice"]
     separator_chain: ["demucs"]
+
+  # === Profile Mac local (không cần API key) ===
+  mac_local:
+    name: "Mac chạy trên máy (không cần API key)"
+    description: "Whisper + Qwen3 (llama.cpp) + OmniVoice + Demucs, tất cả mã nguồn mở"
+    compute: in_process
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 30
+    transcribe_chain: ["hf_whisper_local", "mlx_whisper_local"]
+    translate_chain: ["ollama_qwen"]
+    tts_chain: ["omnivoice_local"]
+    separator_chain: ["demucs"]
+
+  # === Render cổng web (giai đoạn M2) ===
+  render_gateway:
+    name: "Render cổng web + hàng đợi (máy xử lý là Mac)"
+    description: "Render Free không chạy model; nhận việc, xếp hàng, Mac worker kéo về chạy rồi gửi kết quả lên"
+    compute: remote_worker
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 15
+    transcribe_chain: []
+    translate_chain: []
+    tts_chain: []
+    separator_chain: []
+
+  # === Render dùng API dự phòng (để dành) ===
+  render_api_fallback:
+    name: "Render dùng API dự phòng (tương lai)"
+    description: "Groq/Gemini/FPT gói miễn phí hoặc trả phí, hoặc trỏ LLM_BASE_URL tới máy GPU thuê"
+    compute: in_process
+    allowed_flows: ["L1", "L2"]
+    allowed_levels: [1, 2]
+    max_duration_minutes: 5
+    transcribe_chain: ["groq_turbo", "groq_large_v3"]
+    translate_chain: ["ollama_qwen", "gemini", "deepseek"]
+    tts_chain: ["fpt_ai", "vieneu_server"]
+    separator_chain: []

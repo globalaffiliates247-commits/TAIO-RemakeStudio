@@ -1,0 +1,70 @@
+# Thêm vào mục `voices:` của config/voices.yaml.
+# Tên voice_key của VieNeu lấy đúng theo danh sách giọng có sẵn của VieNeu-TTS v3 Turbo (GET /v1/voices).
+# Giới tính đoán theo tên: nghe thử và sửa nếu cần.
+
+  vi_north_female_vn:
+    id: "vi_north_female_vn"
+    name: "Ngọc Linh (Bắc - Nữ)"
+    region: "Bắc"
+    gender: "female"
+    engine: "vieneu_server"
+    voice_key: "Ngọc Linh"
+  vi_north_male_vn:
+    id: "vi_north_male_vn"
+    name: "Phạm Tuyên (Bắc - Nam)"
+    region: "Bắc"
+    gender: "male"
+    engine: "vieneu_server"
+    voice_key: "Phạm Tuyên"
+  vi_central_female_vn:
+    id: "vi_central_female_vn"
+    name: "Ngọc Trân (Trung - Nữ)"
+    region: "Trung"
+    gender: "female"
+    engine: "vieneu_server"
+    voice_key: "Ngọc Trân"
+  vi_central_male_vn:
+    id: "vi_central_male_vn"
+    name: "Quang Sơn (Trung - Nam)"
+    region: "Trung"
+    gender: "male"
+    engine: "vieneu_server"
+    voice_key: "Quang Sơn"
+  vi_south_female_vn:
+    id: "vi_south_female_vn"
+    name: "Mỹ Duyên (Nam - Nữ)"
+    region: "Nam"
+    gender: "female"
+    engine: "vieneu_server"
+    voice_key: "Mỹ Duyên"
+  vi_south_male_vn:
+    id: "vi_south_male_vn"
+    name: "Thái Sơn (Nam - Nam)"
+    region: "Nam"
+    gender: "male"
+    engine: "vieneu_server"
+    voice_key: "Thái Sơn"
+
+  # Giọng nước ngoài cho L3 (Super Admin) bằng OmniVoice chạy trên máy
+  en_female_omni:
+    id: "en_female_omni"
+    name: "English - Female (OmniVoice)"
+    region: "EN"
+    gender: "female"
+    engine: "omnivoice_local"
+    language: "en"
+    omnivoice_instruct: "female, young adult, warm, clear"
+  zh_female_omni:
+    id: "zh_female_omni"
+    name: "中文 - Nữ (OmniVoice)"
+    region: "ZH"
+    gender: "female"
+    engine: "omnivoice_local"
+    language: "zh"
+    omnivoice_instruct: "female, young adult, gentle"
+  # Nhân bản giọng của chính TAIO-Lee (tự thu 5-10 giây, ghi đúng lời đã đọc):
+  # my_voice_omni:
+  #   engine: "omnivoice_local"
+  #   language: "vi"
+  #   omnivoice_ref_audio: "data/voices/taio_lee.wav"
+  #   omnivoice_ref_text: "Lời đã đọc trong file mẫu"

@@ -1,0 +1,15 @@
+# Cài thêm cho profile mac_local (Mac chip Apple). Cài SAU requirements.txt:
+#   uv pip install -r requirements.txt -r requirements-mac-local.txt
+# VieNeu-TTS KHÔNG cài ở đây: chạy trong môi trường riêng của repo VieNeu-TTS (tránh xung đột thư viện).
+
+torch==2.8.0              # OmniVoice khuyến nghị bản này trên Apple Silicon
+torchaudio==2.8.0
+transformers>=4.45        # Whisper large-v3-turbo, PhoWhisper
+accelerate>=0.33
+soundfile>=0.12
+omnivoice                 # k2-fsa/OmniVoice, Apache-2.0
+demucs>=4.0               # tách nhạc L5, MIT
+openai>=1.0               # client chuẩn OpenAI để gọi Ollama / llama.cpp server
+huggingface_hub>=0.24
+# llama-cpp-python[server] # macOS 13: setup script tự cài (biên dịch với Metal)
+# mlx-whisper             # tuỳ chọn, nhanh hơn trên Mac; cần macOS 13.5+ (setup script tự cài nếu đủ điều kiện)

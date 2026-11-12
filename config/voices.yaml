@@ -1,9 +1,8 @@
 # TAIO RemakeStudio: Danh mục giọng đọc vùng miền và quốc tế
-# Engines: edge_tts, vieneu, voxcpm, fpt_ai, omnivoice
-# Chứa mô tả prompt giọng vùng miền cho VoxCPM2
+# Engines: edge_tts, vieneu, voxcpm, fpt_ai, omnivoice, vieneu_server, omnivoice_local
 
 voices:
-  # Giọng Việt Bắc
+  # ========== Giọng Việt - edge_tts (profile: local, render_free, render_starter) ==========
   vi_north_female_1:
     id: "vi_north_female_1"
     name: "Hoài My (Bắc - Nữ thanh lịch)"
@@ -24,7 +23,7 @@ voices:
     voxcpm_prompt: "Giọng nam miền Bắc trầm ấm, dõng dạc, tự tin, phong thái chuyên nghiệp."
     tags: ["thuyet_minh", "khoa_hoc", "review"]
 
-  # Giọng Việt Nam
+  # ========== Giọng Việt - vieneu (profile: local, self_host) ==========
   vi_south_female_1:
     id: "vi_south_female_1"
     name: "Mỹ Linh (Nam - Nữ ngọt ngào)"
@@ -45,7 +44,6 @@ voices:
     voxcpm_prompt: "Giọng nam miền Nam hào sảng, năng động, rõ lời và thân thiện."
     tags: ["vlog", "cong_nghe", "hai_huoc"]
 
-  # Giọng Việt Trung (Miền Trung)
   vi_central_female_1:
     id: "vi_central_female_1"
     name: "Hương Giang (Trung - Huế dịu dàng)"
@@ -56,7 +54,7 @@ voices:
     voxcpm_prompt: "Giọng nữ miền Trung (Huế) dịu dàng, êm đềm, ngọt bùi, đậm chất truyền thống."
     tags: ["que_huong", "tho", "truyen_thong"]
 
-  # Giọng Quốc tế (OmniVoice / VoxCPM - Super Admin)
+  # ========== Giọng Quốc tế - omnivoice server (profile: local, self_host, render_starter) ==========
   en_us_female:
     id: "en_us_female"
     name: "Jenny (US English)"
@@ -76,3 +74,45 @@ voices:
     voice_key: "zh-CN-XiaoxiaoNeural"
     voxcpm_prompt: "Standard Mandarin Chinese female voice, clear articulation and melodic tone."
     tags: ["international"]
+
+  # ========== Giọng Việt - omnivoice_local (profile: mac_local) ==========
+  vi_omni_female:
+    id: "vi_omni_female"
+    name: "Giọng Nữ Việt (OmniVoice)"
+    region: "Việt Nam"
+    gender: "female"
+    engine: "omnivoice_local"
+    language: "vi"
+    omnivoice_instruct: "female, young adult, warm, clear, Vietnamese"
+    tags: ["mac_local", "tu_nhien"]
+
+  vi_omni_male:
+    id: "vi_omni_male"
+    name: "Giọng Nam Việt (OmniVoice)"
+    region: "Việt Nam"
+    gender: "male"
+    engine: "omnivoice_local"
+    language: "vi"
+    omnivoice_instruct: "male, young adult, confident, clear, Vietnamese"
+    tags: ["mac_local", "thuyet_minh"]
+
+  # ========== Giọng Quốc tế - omnivoice_local (profile: mac_local, L3 Super Admin) ==========
+  en_female_omni:
+    id: "en_female_omni"
+    name: "English - Female (OmniVoice)"
+    region: "EN"
+    gender: "female"
+    engine: "omnivoice_local"
+    language: "en"
+    omnivoice_instruct: "female, young adult, warm, clear"
+    tags: ["international", "mac_local"]
+
+  zh_female_omni:
+    id: "zh_female_omni"
+    name: "中文 - Nữ (OmniVoice)"
+    region: "ZH"
+    gender: "female"
+    engine: "omnivoice_local"
+    language: "zh"
+    omnivoice_instruct: "female, young adult, gentle"
+    tags: ["international", "mac_local"]

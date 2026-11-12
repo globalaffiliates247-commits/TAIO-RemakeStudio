@@ -1,0 +1,41 @@
+# Thêm 3 profile dưới đây vào mục `profiles:` của config/deploy_profiles.yaml (giữ nguyên các profile cũ).
+# Chọn bằng biến môi trường DEPLOY_PROFILE.
+
+  # 1) Mac của TAIO-Lee, chạy hoàn toàn trên máy, KHÔNG cần API key.
+  mac_local:
+    name: "Mac chạy trên máy (không cần API key)"
+    description: "Whisper + Qwen3 (Ollama) + VieNeu-TTS + OmniVoice + Demucs, tất cả mã nguồn mở"
+    compute: in_process
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 30
+    transcribe_chain: ["hf_whisper_local", "mlx_whisper_local"]
+    translate_chain: ["ollama_qwen"]
+    tts_chain: ["vieneu_server", "omnivoice_local"]
+    separator_chain: ["demucs"]
+
+  # 2) Render chỉ làm cổng: giao diện + hàng đợi. Việc nặng do Mac (worker) kéo về xử lý.
+  render_gateway:
+    name: "Render cổng web + hàng đợi (máy xử lý là Mac)"
+    description: "Render Free không chạy model; nhận việc, xếp hàng, Mac worker kéo về chạy rồi gửi kết quả lên"
+    compute: remote_worker
+    allowed_flows: ["L1", "L2", "L3", "L4", "L5"]   # thực tế bật theo khả năng worker báo về (heartbeat)
+    allowed_levels: [1, 2, 3, 4]
+    max_duration_minutes: 15                       # giới hạn dung lượng tải lên của gói Free
+    transcribe_chain: []
+    translate_chain: []
+    tts_chain: []
+    separator_chain: []
+
+  # 3) Cổng mở rộng (để dành): Render tự xử lý bằng API khi Mac tắt. Mặc định KHÔNG dùng.
+  render_api_fallback:
+    name: "Render dùng API dự phòng (tương lai)"
+    description: "Khi đủ khả năng: Groq/Gemini/FPT gói miễn phí hoặc trả phí, hoặc trỏ LLM_BASE_URL tới máy GPU thuê"
+    compute: in_process
+    allowed_flows: ["L1", "L2"]
+    allowed_levels: [1, 2]
+    max_duration_minutes: 5
+    transcribe_chain: ["groq_turbo", "groq_large_v3"]
+    translate_chain: ["ollama_qwen", "gemini", "deepseek"]   # ollama_qwen ở đây = bất kỳ API chuẩn OpenAI qua LLM_BASE_URL
+    tts_chain: ["fpt_ai", "vieneu_server"]
+    separator_chain: []

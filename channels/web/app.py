@@ -17,6 +17,7 @@ import shutil
 import uuid
 import yaml
 import logging
+import threading
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -135,9 +136,16 @@ async def api_config():
         i_val["disabled_reason"] = st["reason"]
         intents_payload.append(i_val)
 
+    # Lọc giọng: chỉ hiện giọng thuộc tts_chain của profile đang chạy
+    from engines.profile import DeployProfile as _DP
+    _active_tts = _DP().tts_chain
+
     voices_payload = []
     for v_id, v_val in all_voices.items():
         v_eng = v_val.get("engine", "edge_tts")
+        # Ẩn giọng không thuộc tts_chain
+        if v_eng not in _active_tts:
+            continue
         meta = ENGINES.get(v_eng)
         is_ready = True
         msg = ""
@@ -190,103 +198,107 @@ async def probe_endpoint(
 # ==========================================
 # 4. PROCESS PIPELINE (BƯỚC 2 THEO Ý ĐỊNH)
 # ==========================================
+_TASK_LOCK = threading.Lock()
+
+
 def execute_intent_task(task_id: str, input_target: str, intent: str, options: dict):
-    task_dir = os.path.join(OUTPUT_DIR, task_id)
-    os.makedirs(task_dir, exist_ok=True)
+    with _TASK_LOCK:
+        task_dir = os.path.join(OUTPUT_DIR, task_id)
+        os.makedirs(task_dir, exist_ok=True)
 
-    try:
-        # Bước 1: Tải & trích xuất audio
-        TaskManager.update_step(task_id, 0, "running", engine="yt-dlp")
-        from sources.upload_file import UploadFileSource
-        from sources.tiktok import TikTokSource
-        from sources.facebook import FacebookSource
+        try:
+            # Bước 1: Tải & trích xuất audio
+            TaskManager.update_step(task_id, 0, "running", engine="yt-dlp")
+            from sources.upload_file import UploadFileSource
+            from sources.tiktok import TikTokSource
+            from sources.facebook import FacebookSource
 
-        if input_target.startswith(("http://", "https://")):
-            if "tiktok" in input_target:
-                source = TikTokSource()
+            if input_target.startswith(("http://", "https://")):
+                if "tiktok" in input_target:
+                    source = TikTokSource()
+                else:
+                    source = FacebookSource()
             else:
-                source = FacebookSource()
-        else:
-            source = UploadFileSource()
+                source = UploadFileSource()
 
-        media_info = source.fetch(input_target, task_dir)
-        TaskManager.update_step(task_id, 0, "completed", engine=media_info.platform)
+            media_info = source.fetch(input_target, task_dir)
+            TaskManager.update_step(task_id, 0, "completed", engine=media_info.platform)
 
-        # Xử lý Luồng L5 (Tách nhạc) riêng biệt
-        if intent == "music_stems":
-            TaskManager.update_step(task_id, 1, "skipped", engine="demucs")
-            TaskManager.update_step(task_id, 2, "skipped", engine="demucs")
-            TaskManager.update_step(task_id, 3, "running", engine="demucs")
+            # Xử lý Luồng L5 (Tách nhạc) riêng biệt
+            if intent == "music_stems":
+                TaskManager.update_step(task_id, 1, "skipped", engine="demucs")
+                TaskManager.update_step(task_id, 2, "skipped", engine="demucs")
+                TaskManager.update_step(task_id, 3, "running", engine="demucs")
 
-            sep_chain = SeparatorChain()
-            stems = sep_chain.separate(media_info.audio_path, task_dir)
+                sep_chain = SeparatorChain()
+                stems = sep_chain.separate(media_info.audio_path, task_dir)
+
+                task = TaskManager.get_task(task_id)
+                task["status"] = "completed"
+                task["current_step"] = "Hoàn tất tách nhạc!"
+                task["files"] = [
+                    {"id": sname, "label": sname.upper(), "kind": "audio", "download_url": f"/api/download/{task_id}/{os.path.basename(path)}"}
+                    for sname, path in stems.items() if os.path.exists(path)
+                ]
+                TaskManager.update_step(task_id, 3, "completed", engine="demucs")
+                return
+
+            # Bước 2: Chép lời & Tự động phát hiện ngôn ngữ
+            TaskManager.update_step(task_id, 1, "running", engine="đang nạp…")
+            transcribe_chain = TranscribeChain()
+            transcript, used_trans_engine = transcribe_chain.transcribe(media_info.audio_path, language="auto")
+            TaskManager.update_step(task_id, 1, "completed", engine=used_trans_engine)
+
+            detected_lang = transcript.source_language or "en"
+            flow_id, flow_opts = intent_resolver.resolve_flow(intent, detected_language=detected_lang)
 
             task = TaskManager.get_task(task_id)
+            task["detected_language"] = detected_lang
+            task["flow"] = flow_id
+
+            # Bước 3: Dịch thuật ngữ cảnh (nếu là L1, L2, L3)
+            if flow_id in ["L1", "L2", "L3"]:
+                TaskManager.update_step(task_id, 2, "running", engine="đang nạp…")
+                trans_chain = TranslateChain()
+                target_lang = options.get("target_lang", "vi")
+                transcript, used_translate_engine = trans_chain.translate_transcript(transcript, target_lang=target_lang)
+                TaskManager.update_step(task_id, 2, "completed", engine=used_translate_engine)
+            else:
+                # L4: Đổi giọng (không dịch)
+                for seg in transcript.segments:
+                    seg.translated_text = seg.original_text
+                TaskManager.update_step(task_id, 2, "skipped", engine="None")
+
+            # Bước 4: Xuất Mức 1 & Lưu transcript.json
+            TaskManager.update_step(task_id, 3, "running", engine="TextExporter")
+            TaskManager.save_transcript(task_id, transcript)
+
+            txt_file = os.path.join(task_dir, "transcript.txt")
+            srt_file = os.path.join(task_dir, "subtitles.srt")
+            docx_file = os.path.join(task_dir, "document.docx")
+
+            TextExporter.export(transcript, txt_file)
+            SrtExporter.export(transcript, srt_file, bilingual=True)
+            DocxExporter.export(transcript, docx_file)
+
             task["status"] = "completed"
-            task["current_step"] = "Hoàn tất tách nhạc!"
+            task["current_step"] = "Hoàn tất Mức 1 (Sẵn sàng mở rộng Mức 2–4)"
+            task["transcript"] = transcript.to_dict()
             task["files"] = [
-                {"id": sname, "label": sname.upper(), "kind": "audio", "download_url": f"/api/download/{task_id}/{os.path.basename(path)}"}
-                for sname, path in stems.items() if os.path.exists(path)
+                {"id": "srt", "label": "Phụ đề SRT", "kind": "subtitles", "download_url": f"/api/download/{task_id}/subtitles.srt"},
+                {"id": "txt", "label": "Văn bản TXT", "kind": "text", "download_url": f"/api/download/{task_id}/transcript.txt"},
+                {"id": "docx", "label": "Tài liệu Word", "kind": "docx", "download_url": f"/api/download/{task_id}/document.docx"}
             ]
-            TaskManager.update_step(task_id, 3, "completed", engine="demucs")
-            return
+            TaskManager.update_step(task_id, 3, "completed", engine="TextExporter")
 
-        # Bước 2: Chép lời & Tự động phát hiện ngôn ngữ
-        TaskManager.update_step(task_id, 1, "running", engine="Groq Whisper")
-        transcribe_chain = TranscribeChain()
-        transcript, used_trans_engine = transcribe_chain.transcribe(media_info.audio_path, language="auto")
-        TaskManager.update_step(task_id, 1, "completed", engine=used_trans_engine)
-
-        detected_lang = transcript.source_language or "en"
-        flow_id, flow_opts = intent_resolver.resolve_flow(intent, detected_language=detected_lang)
-
-        task = TaskManager.get_task(task_id)
-        task["detected_language"] = detected_lang
-        task["flow"] = flow_id
-
-        # Bước 3: Dịch thuật ngữ cảnh (nếu là L1, L2, L3)
-        if flow_id in ["L1", "L2", "L3"]:
-            TaskManager.update_step(task_id, 2, "running", engine="Gemini Flash")
-            trans_chain = TranslateChain()
-            target_lang = options.get("target_lang", "vi")
-            transcript, used_translate_engine = trans_chain.translate_transcript(transcript, target_lang=target_lang)
-            TaskManager.update_step(task_id, 2, "completed", engine=used_translate_engine)
-        else:
-            # L4: Đổi giọng (không dịch)
-            for seg in transcript.segments:
-                seg.translated_text = seg.original_text
-            TaskManager.update_step(task_id, 2, "skipped", engine="None")
-
-        # Bước 4: Xuất Mức 1 & Lưu transcript.json
-        TaskManager.update_step(task_id, 3, "running", engine="TextExporter")
-        TaskManager.save_transcript(task_id, transcript)
-
-        txt_file = os.path.join(task_dir, "transcript.txt")
-        srt_file = os.path.join(task_dir, "subtitles.srt")
-        docx_file = os.path.join(task_dir, "document.docx")
-
-        TextExporter.export(transcript, txt_file)
-        SrtExporter.export(transcript, srt_file, bilingual=True)
-        DocxExporter.export(transcript, docx_file)
-
-        task["status"] = "completed"
-        task["current_step"] = "Hoàn tất Mức 1 (Sẵn sàng mở rộng Mức 2–4)"
-        task["transcript"] = transcript.to_dict()
-        task["files"] = [
-            {"id": "srt", "label": "Phụ đề SRT", "kind": "subtitles", "download_url": f"/api/download/{task_id}/subtitles.srt"},
-            {"id": "txt", "label": "Văn bản TXT", "kind": "text", "download_url": f"/api/download/{task_id}/transcript.txt"},
-            {"id": "docx", "label": "Tài liệu Word", "kind": "docx", "download_url": f"/api/download/{task_id}/document.docx"}
-        ]
-        TaskManager.update_step(task_id, 3, "completed", engine="TextExporter")
-
-    except RemakeStudioError as e:
-        task = TaskManager.get_task(task_id)
-        task["status"] = "failed"
-        task["error"] = e.to_dict()
-    except Exception as e:
-        task = TaskManager.get_task(task_id)
-        task["status"] = "failed"
-        task["error"] = {"error": str(e), "action": "retry"}
+        except RemakeStudioError as e:
+            task = TaskManager.get_task(task_id)
+            task["status"] = "failed"
+            task["error"] = e.to_dict()
+        except Exception as e:
+            task = TaskManager.get_task(task_id)
+            task["status"] = "failed"
+            task["error"] = {"error": str(e), "action": "retry"}
 
 
 @app.post("/api/process")

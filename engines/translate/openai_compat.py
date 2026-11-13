@@ -40,6 +40,24 @@ ENGINE_NAME = "LLM dịch (Ollama/OpenAI-compatible)"
 
 LANG_NAMES = {"vi": "tiếng Việt", "en": "English", "zh": "中文", "ja": "日本語", "ko": "한국어", "th": "ภาษาไทย"}
 
+SYSTEM_PROMPT = (
+    "Bạn là biên dịch viên phụ đề phim chuyên nghiệp, dịch sang TIẾNG VIỆT THUẦN.\n"
+    "Quy tắc bắt buộc:\n"
+    "1. Chỉ dùng từ tiếng Việt. TUYỆT ĐỐI không chèn từ tiếng Anh/Hoa còn sót lại "
+    "(ví dụ sai: 'fly đến Nhật', 'meeting với đối tác' — phải viết 'bay đến Nhật', "
+    "'họp với đối tác').\n"
+    "2. Tên riêng (người, thương hiệu, địa danh chưa có tên Việt hoá) thì giữ nguyên, "
+    "không dịch, không phiên âm bừa.\n"
+    "3. Câu ngắn gọn, tự nhiên như người Việt nói chuyện, không dịch word-by-word.\n"
+    "4. Độ dài câu dịch nên khớp với 'duration' cho sẵn, để lồng tiếng kịp nhịp.\n"
+    "5. Chỉ xuất JSON mảng, không thêm markdown, không giải thích gì thêm.\n\n"
+    "Ví dụ đúng:\n"
+    "Input:  {\"id\": 1, \"text\": \"亲自飞往日本跟世家协商\", \"duration\": 3.0}\n"
+    "Output: [{\"id\": 1, \"translated\": \"Đích thân bay sang Nhật Bản để đàm phán với gia tộc\"}]\n\n"
+    "Input:  {\"id\": 2, \"text\": \"I had a meeting with the investors yesterday\", \"duration\": 2.5}\n"
+    "Output: [{\"id\": 2, \"translated\": \"Hôm qua tôi đã họp với các nhà đầu tư\"}]"
+)
+
 
 def parse_translation_json(raw: str) -> Dict[int, str]:
     """Đọc mảng [{"id":..,"translated":..}] từ câu trả lời; bỏ phần <think> của Qwen3 và khối ```json."""
@@ -101,19 +119,28 @@ class OpenAICompatTranslator:
 
     def _translate_batch(self, client, items: List[dict], target_lang: str) -> Dict[int, str]:
         lang = LANG_NAMES.get(target_lang, target_lang)
-        prompt = (
-            f"Dịch từng câu phụ đề sau sang {lang}. Dịch tự nhiên, ngắn gọn để đọc kịp trong 'duration' giây, "
-            f"giữ đúng ngữ cảnh cả đoạn, giữ nguyên tên riêng. Giữ nguyên id và số câu. "
-            f"Lưu ý quan trọng: Không dùng dấu ngoặc kép bên trong câu dịch. "
-            f"Chỉ trả về một mảng JSON dạng [{{\"id\": 1, \"translated\": \"...\"}}], không giải thích.\n"
-            f"{json.dumps(items, ensure_ascii=False)}"
-        )
+        if target_lang == "vi":
+            system_msg = SYSTEM_PROMPT
+            prompt = (
+                f"Dịch từng câu sau sang tiếng Việt thuần. Lưu ý quan trọng: Không dùng dấu ngoặc kép bên trong câu dịch. "
+                f"Chỉ trả về một mảng JSON dạng [{{\"id\": 1, \"translated\": \"...\"}}], không giải thích:\n"
+                f"{json.dumps(items, ensure_ascii=False)}"
+            )
+        else:
+            system_msg = f"You are a professional video subtitle translator into {lang}. Output valid JSON array only. Never explain."
+            prompt = (
+                f"Dịch từng câu phụ đề sau sang {lang}. Dịch tự nhiên, ngắn gọn để đọc kịp trong 'duration' giây, "
+                f"giữ đúng ngữ cảnh cả đoạn, giữ nguyên tên riêng. Giữ nguyên id và số câu. "
+                f"Lưu ý quan trọng: Không dùng dấu ngoặc kép bên trong câu dịch. "
+                f"Chỉ trả về một mảng JSON dạng [{{\"id\": 1, \"translated\": \"...\"}}], không giải thích.\n"
+                f"{json.dumps(items, ensure_ascii=False)}"
+            )
         max_tokens = min(1024, max(256, len(items) * 120))
         try:
             resp = client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional video subtitle translator. Output JSON only. Never explain."},
+                    {"role": "system", "content": system_msg},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,

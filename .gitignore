@@ -31,4 +31,5 @@ data/outputs/*
 !data/outputs/.gitkeep
 data/user_quotas.json
 data/community_feed.json
+data/logs/
 .DS_Store

@@ -18,8 +18,15 @@ cleanup() { for p in "${PIDS[@]:-}"; do kill "$p" 2>/dev/null || true; done; }
 trap cleanup EXIT INT TERM
 
 wait_for() { # url, tên, số giây
-  for _ in $(seq 1 "$3"); do curl -s "$1" >/dev/null && { echo "  ✅ $2 sẵn sàng"; return 0; }; sleep 1; done
-  echo "  ❌ $2 chưa lên sau $3 giây (xem $LOG_DIR)"; return 1
+  for _ in $(seq 1 "$3"); do
+    if curl -s "$1" >/dev/null 2>&1; then
+      echo "  ✅ $2 sẵn sàng"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "  ❌ $2 chưa lên sau $3 giây (xem $LOG_DIR)"
+  return 1
 }
 
 if [ "${LLM_BACKEND:-ollama}" = "ollama" ]; then
@@ -32,7 +39,8 @@ else
   echo "▶ llama.cpp server (dịch Qwen3) cổng ${LLAMACPP_PORT:-8102}"
   if ! curl -s "http://127.0.0.1:${LLAMACPP_PORT:-8102}/v1/models" >/dev/null; then
     HOST=127.0.0.1 PORT="${LLAMACPP_PORT:-8102}" .venv/bin/python -m llama_cpp.server --model "$LLAMACPP_MODEL_PATH" --model_alias "$LLM_MODEL" \
-      --n_gpu_layers "${LLAMACPP_GPU_LAYERS:-0}" --n_ctx "${LLAMACPP_CTX:-2048}" --n_threads 4 --chat_template_kwargs '{"enable_thinking":false}' \
+      --n_gpu_layers "${LLAMACPP_GPU_LAYERS:-0}" --n_ctx "${LLAMACPP_CTX:-2048}" --n_threads "${LLAMACPP_THREADS:-4}" \
+      --logits_all False --use_mlock False --chat_template_kwargs '{"enable_thinking":false}' \
       --host 127.0.0.1 --port "${LLAMACPP_PORT:-8102}" \
       >"$LOG_DIR/llamacpp.log" 2>&1 & PIDS+=($!)
   fi

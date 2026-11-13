@@ -142,4 +142,8 @@ class HFWhisperTranscriber:
         if not transcript.segments:
             raise EngineFailed(ENGINE_NAME, "không nghe thấy lời nói trong file")
         transcript.metadata["transcribe_model"] = model_name
+        if os.getenv("DEPLOY_PROFILE") == "mac_local":
+            self._pipes.clear()
+            import gc
+            gc.collect()
         return transcript

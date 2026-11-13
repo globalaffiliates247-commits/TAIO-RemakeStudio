@@ -250,7 +250,9 @@ def execute_intent_task(task_id: str, input_target: str, intent: str, options: d
             TaskManager.update_step(task_id, 1, "completed", engine=used_trans_engine)
 
             detected_lang = transcript.source_language or "en"
-            flow_id, flow_opts = intent_resolver.resolve_flow(intent, detected_language=detected_lang)
+            flow_id, flow_opts = intent_resolver.resolve_flow(
+                intent, detected_language=detected_lang, user_role=options.get("user_role", "super_admin")
+            )
 
             task = TaskManager.get_task(task_id)
             task["detected_language"] = detected_lang
@@ -260,7 +262,7 @@ def execute_intent_task(task_id: str, input_target: str, intent: str, options: d
             if flow_id in ["L1", "L2", "L3"]:
                 TaskManager.update_step(task_id, 2, "running", engine="đang nạp…")
                 trans_chain = TranslateChain()
-                target_lang = options.get("target_lang", "vi")
+                target_lang = options.get("target_lang") or ("en" if flow_id == "L3" else "vi")
                 transcript, used_translate_engine = trans_chain.translate_transcript(transcript, target_lang=target_lang)
                 TaskManager.update_step(task_id, 2, "completed", engine=used_translate_engine)
             else:
@@ -309,7 +311,8 @@ async def start_process(
     intent: str = Form("listen_vi"),
     voice_id: Optional[str] = Form("vi_north_female_1"),
     target_lang: Optional[str] = Form("vi"),
-    song_mode: bool = Form(False)
+    song_mode: bool = Form(False),
+    user_role: Optional[str] = Form("super_admin")
 ):
     # Kiểm tra tính sẵn sàng trước khi cho phép tạo task (Theo Mục 3)
     readiness = get_system_readiness()
@@ -337,7 +340,8 @@ async def start_process(
     options = {
         "voice_id": voice_id,
         "target_lang": target_lang,
-        "song_mode": song_mode
+        "song_mode": song_mode,
+        "user_role": user_role
     }
 
     background_tasks.add_task(execute_intent_task, task_id, target, intent, options)

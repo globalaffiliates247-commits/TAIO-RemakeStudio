@@ -83,7 +83,7 @@ voices:
     gender: "female"
     engine: "omnivoice_local"
     language: "vi"
-    omnivoice_instruct: "female, young adult, warm, clear, Vietnamese"
+    omnivoice_instruct: "female, young adult"
     tags: ["mac_local", "tu_nhien"]
 
   vi_omni_male:
@@ -93,7 +93,7 @@ voices:
     gender: "male"
     engine: "omnivoice_local"
     language: "vi"
-    omnivoice_instruct: "male, young adult, confident, clear, Vietnamese"
+    omnivoice_instruct: "male, young adult"
     tags: ["mac_local", "thuyet_minh"]
 
   # ========== Giọng Quốc tế - omnivoice_local (profile: mac_local, L3 Super Admin) ==========
@@ -104,7 +104,7 @@ voices:
     gender: "female"
     engine: "omnivoice_local"
     language: "en"
-    omnivoice_instruct: "female, young adult, warm, clear"
+    omnivoice_instruct: "female, young adult, american accent"
     tags: ["international", "mac_local"]
 
   zh_female_omni:
@@ -114,5 +114,5 @@ voices:
     gender: "female"
     engine: "omnivoice_local"
     language: "zh"
-    omnivoice_instruct: "female, young adult, gentle"
+    omnivoice_instruct: "female, young adult, chinese accent"
     tags: ["international", "mac_local"]
